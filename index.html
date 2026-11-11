@@ -75,6 +75,16 @@
   .stamp-text .date { font-size: 13px; color: var(--muted); font-weight: 700; }
   .stamp-text .msg { font-size: 18px; font-weight: 800; margin-top: 4px; line-height: 1.4; }
   .stamp-text .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .pick-btn { margin-top: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.7); font-size: 12px; font-weight: 700; color: var(--peach-deep); }
+  .picker { margin-top: 10px; background: var(--card); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); display: none; }
+  .picker.open { display: block; animation: fade .2s ease; }
+  .picker .ttl { font-size: 13px; font-weight: 800; margin-bottom: 10px; }
+  .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .emoji-grid button { aspect-ratio: 1; border-radius: 14px; background: var(--cream); font-size: 24px; }
+  .emoji-grid button.sel { background: var(--peach-soft); outline: 2px solid var(--peach); outline-offset: -2px; }
+  .own { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .own input { flex: 1; min-width: 0; border: none; outline: none; background: var(--cream); border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; color: var(--text); }
+  .own button { padding: 10px 14px; border-radius: 12px; background: var(--peach); color: #fff; font-size: 13px; font-weight: 800; }
 
   .section-title { display: flex; align-items: center; justify-content: space-between; margin: 22px 4px 10px; }
   .section-title h2 { font-size: 17px; margin: 0; font-weight: 800; }
@@ -113,7 +123,7 @@
   .cell.done { background: var(--yellow-soft); }
   .cell.done .n { position: absolute; top: 2px; left: 5px; font-size: 9px; color: #B7862A; }
   .cell .stamp { width: 78%; aspect-ratio: 1; border-radius: 50%; background: var(--peach); border: 2px solid #fff; box-shadow: 0 0 0 1.5px var(--peach-deep); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; font-size: 6.5px; font-weight: 800; letter-spacing: .04em; transform: rotate(-12deg); margin-top: 3px; }
-  .cell .stamp b { font-size: 14px; margin-bottom: 1px; }
+  .cell .stamp b { font-size: 13px; margin-bottom: 1px; font-weight: 400; }
   .cell .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow-deep); margin-top: 2px; }
   .cell.done .dot { position: absolute; bottom: 3px; right: 4px; margin: 0; }
   .cal-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
@@ -238,7 +248,14 @@
         <div class="date" id="stampDate"></div>
         <div class="msg" id="stampMsg"></div>
         <div class="hint" id="stampHint"></div>
+        <button class="pick-btn" id="pickBtn">スタンプを選ぶ ›</button>
       </div>
+    </div>
+
+    <div class="picker" id="picker">
+      <div class="ttl">好きなスタンプを選んでね</div>
+      <div class="emoji-grid" id="emojiGrid"></div>
+      <div class="own"><input id="ownEmoji" maxlength="8" placeholder="ほかの絵文字を入力"><button id="ownBtn">決定</button></div>
     </div>
 
     <div class="section-title">
@@ -358,6 +375,8 @@ const METRICS = [
 const CHART_COLORS = { weight: '#EE9E6C', underbust: '#E2A93A', waist: '#EE9E6C', kubire: '#E2A93A', lowerBelly: '#EE9E6C', hip: '#E2A93A' };
 const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 const STORE_KEY = 'aiko-belly-log-v1';
+const STAMP_CHOICES = ['👟', '💪', '🔥', '⭐️', '✨', '💃', '🧘‍♀️', '🏃‍♀️', '🌻', '🍊', '🍋', '💛', '🎀', '👑', '🐣', '🌈', '☀️', '🦋'];
+const DEFAULT_STAMP = '👟';
 
 let data = load();
 const today = ymd(new Date());
@@ -449,7 +468,7 @@ function renderWeek() {
     if (data.stamps[ds]) cls.push('done');
     if (ds === selected) cls.push('selected');
     if (ds > today) cls.push('future');
-    const mark = data.stamps[ds] ? '🔥' : data.records[ds] ? '・' : '';
+    const mark = data.stamps[ds] ? stampOf(ds) : data.records[ds] ? '・' : '';
     el.innerHTML = `<span class="dow">${DOW[d.getDay()]}</span><button class="${cls.join(' ')}">${d.getDate()}<span class="mark">${mark}</span></button>`;
     el.querySelector('button').onclick = () => { selected = ds; renderHome(); };
     wrap.appendChild(el);
@@ -460,7 +479,8 @@ function renderStamp() {
   const on = !!data.stamps[selected];
   const btn = document.getElementById('stampBtn');
   btn.className = 'stamp-btn' + (on ? ' on' : '');
-  btn.innerHTML = on ? '<span class="ico">✓</span>DONE!' : '<span class="ico">👟</span>タップで<br>スタンプ';
+  btn.innerHTML = on ? `<span class="ico">${stampOf(selected)}</span>DONE!` : `<span class="ico">${myStamp()}</span>タップで<br>スタンプ`;
+  document.getElementById('pickBtn').style.display = selected > today ? 'none' : '';
   btn.disabled = selected > today;
   document.getElementById('stampDate').textContent = selected === today ? `今日・${jpDate(selected)}` : jpDate(selected);
   const msgs = ['よくがんばりました！', 'えらい！今日も動けたね', 'その10分が未来を変える✨', '自分を大切にできた日🫶'];
@@ -498,10 +518,33 @@ function renderHome() {
   document.getElementById('streak').textContent = streak();
 }
 
+// スタンプの絵文字。日ごとに押したときの絵文字を残す（前の版の true は 👟 として扱う）
+function myStamp() { return data.stampIcon || DEFAULT_STAMP; }
+function stampOf(ds) { const v = data.stamps[ds]; return typeof v === 'string' ? v : DEFAULT_STAMP; }
+function setStamp(icon) {
+  data.stampIcon = icon;
+  if (data.stamps[selected]) data.stamps[selected] = icon;
+  save(); document.getElementById('picker').classList.remove('open'); renderAll();
+  toast(`スタンプを ${icon} にしました`);
+}
+function renderPicker() {
+  const grid = document.getElementById('emojiGrid');
+  grid.innerHTML = STAMP_CHOICES.map(e => `<button class="${e === myStamp() ? 'sel' : ''}">${e}</button>`).join('');
+  grid.querySelectorAll('button').forEach(b => b.onclick = () => setStamp(b.textContent));
+}
+document.getElementById('ownBtn').onclick = () => {
+  const v = document.getElementById('ownEmoji').value.trim();
+  if (!v) { toast('絵文字を入れてね'); return; }
+  // 🧘‍♀️ のような組み合わせ絵文字も1つとして扱う
+  const first = window.Intl && Intl.Segmenter ? [...new Intl.Segmenter('ja', { granularity: 'grapheme' }).segment(v)][0].segment : [...v][0];
+  setStamp(first);
+  document.getElementById('ownEmoji').value = '';
+};
+
 function toggleStamp(ds) {
   if (ds > today) return;
   if (data.stamps[ds]) { delete data.stamps[ds]; toast('スタンプを取り消しました'); }
-  else { data.stamps[ds] = true; toast('スタンプを押しました🔥'); }
+  else { data.stamps[ds] = myStamp(); toast(`スタンプを押しました${myStamp()}`); }
   save(); renderAll();
 }
 
@@ -520,7 +563,7 @@ function renderCal() {
     const cls = ['cell'];
     if (ds === today) cls.push('today');
     if (data.stamps[ds]) { cls.push('done'); count++; }
-    const stamp = data.stamps[ds] ? '<span class="stamp"><b>✓</b>DONE</span>' : '';
+    const stamp = data.stamps[ds] ? `<span class="stamp"><b>${stampOf(ds)}</b>DONE</span>` : '';
     html += `<button class="${cls.join(' ')}" data-d="${ds}"><span class="n">${d}</span>${stamp}${data.records[ds] ? '<span class="dot"></span>' : ''}</button>`;
   }
   grid.innerHTML = html;
@@ -656,7 +699,7 @@ function renderTable() {
   if (!ds.length) { t.innerHTML = '<tbody><tr><td style="color:var(--muted);padding:24px">まだ記録がありません</td></tr></tbody>'; return; }
   t.innerHTML = `<thead><tr><th>日付</th>${METRICS.map(m => `<th>${m.name}</th>`).join('')}<th>🔥</th></tr></thead><tbody>` +
     ds.map(d => { const r = data.records[d], dt = parse(d);
-      return `<tr data-d="${d}"><td><b>${dt.getMonth() + 1}/${dt.getDate()}</b></td>${METRICS.map(m => `<td>${r[m.key] != null ? fmt(r[m.key]) : '-'}</td>`).join('')}<td>${data.stamps[d] ? '✓' : ''}</td></tr>`;
+      return `<tr data-d="${d}"><td><b>${dt.getMonth() + 1}/${dt.getDate()}</b></td>${METRICS.map(m => `<td>${r[m.key] != null ? fmt(r[m.key]) : '-'}</td>`).join('')}<td>${data.stamps[d] ? stampOf(d) : ''}</td></tr>`;
     }).join('') + '</tbody>';
   t.querySelectorAll('tbody tr[data-d]').forEach(tr => tr.onclick = () => openSheet(tr.dataset.d));
 }
@@ -740,6 +783,7 @@ document.querySelectorAll('nav [data-view]').forEach(b => b.onclick = () => show
 document.getElementById('fab').onclick = () => openSheet(selected);
 document.getElementById('recordBtn').onclick = () => openSheet(selected);
 document.getElementById('stampBtn').onclick = () => toggleStamp(selected);
+document.getElementById('pickBtn').onclick = () => { renderPicker(); document.getElementById('picker').classList.toggle('open'); };
 document.getElementById('prevWeek').onclick = () => { selected = addDays(selected, -7); renderHome(); };
 document.getElementById('nextWeek').onclick = () => { selected = addDays(selected, 7); renderHome(); };
 document.getElementById('prevMonth').onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCal(); };

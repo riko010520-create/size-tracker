@@ -4,578 +4,649 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<title>サイズログ</title>
-<style>
-/* layout: tape-measure header, entry card with tick-marked fields, line chart with toggle legend, history list doubling as the table view */
-:root{
-  --bg:#f6f1ef; --surface:#ffffff; --surface-2:#fbf6f3;
-  --ink:#2a2024; --ink-soft:#6e5f65; --muted:#96878c; --line:#e7dfdd;
-  --accent:#9c3b58; --accent-strong:#7c2c44; --accent-soft:#f3dde3; --danger:#b23a3a;
-  --chart-grid:#e1e0d9; --chart-muted:#898781;
-  --s-chestUnder:#2a78d6; --s-waist:#eb6834; --s-curve:#1baf7a; --s-lowerAbdomen:#eda100; --s-hip:#e87ba4;
-  color-scheme:light;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#1b1517; --surface:#221b1e; --surface-2:#291f23;
-    --ink:#f6eff1; --ink-soft:#c7b9bd; --muted:#8f8285; --line:#3a3033;
-    --accent:#e08aa1; --accent-strong:#eda9bb; --accent-soft:#3a2530; --danger:#e08585;
-    --chart-grid:#2c2c2a; --chart-muted:#898781;
-    --s-chestUnder:#3987e5; --s-waist:#d95926; --s-curve:#199e70; --s-lowerAbdomen:#c98500; --s-hip:#d55181;
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#1b1517; --surface:#221b1e; --surface-2:#291f23;
-  --ink:#f6eff1; --ink-soft:#c7b9bd; --muted:#8f8285; --line:#3a3033;
-  --accent:#e08aa1; --accent-strong:#eda9bb; --accent-soft:#3a2530; --danger:#e08585;
-  --chart-grid:#2c2c2a; --chart-muted:#898781;
-  --s-chestUnder:#3987e5; --s-waist:#d95926; --s-curve:#199e70; --s-lowerAbdomen:#c98500; --s-hip:#d55181;
-  color-scheme:dark;
-}
-
-*{box-sizing:border-box}
-html,body{margin:0;}
-body{
-  background:var(--bg); color:var(--ink);
-  font-family:'Karla',-apple-system,'Segoe UI',sans-serif;
-  padding-inline:16px;
-  padding-block:calc(24px + env(safe-area-inset-top)) calc(24px + env(safe-area-inset-bottom));
-  min-height:100vh;
-}
-.wrap{max-width:560px; margin:0 auto; display:flex; flex-direction:column; gap:20px;}
-
-h1,h2,h3{font-family:'Fraunces',Georgia,'Times New Roman',serif; font-weight:600; margin:0; text-wrap:balance;}
-h1{font-size:1.7rem; letter-spacing:.2px;}
-h2{font-size:1.05rem; color:var(--ink);}
-
-.eyebrow{font-size:.72rem; letter-spacing:.09em; color:var(--muted); text-transform:uppercase; margin:0 0 4px;}
-.tape{
-  height:6px; border-radius:3px; margin-top:10px;
-  background:repeating-linear-gradient(90deg, var(--accent) 0 2px, transparent 2px 10px);
-  opacity:.55;
-}
-
-header.top{padding-top:2px;}
-.today{font-size:.85rem; color:var(--ink-soft); margin-top:4px;}
-
-.card{
-  background:var(--surface); border:1px solid var(--line); border-radius:16px;
-  padding:18px; box-shadow:0 1px 2px rgba(0,0,0,.03);
-}
-
-/* stat row */
-.stats{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
-@media(min-width:480px){.stats{grid-template-columns:repeat(3,minmax(0,1fr));}}
-.stat{
-  background:var(--surface-2); border-radius:12px; padding:10px 12px; min-width:0;
-}
-.stat .label{font-size:.72rem; color:var(--muted); display:flex; align-items:center; gap:6px;}
-.stat .dot{width:8px; height:8px; border-radius:50%; flex:none;}
-.stat .value{font-family:'Fraunces',serif; font-size:1.25rem; font-variant-numeric:tabular-nums; margin-top:2px;}
-.stat .value .unit{font-family:'Karla',sans-serif; font-size:.7rem; color:var(--muted); margin-left:2px;}
-.stat .delta{font-size:.72rem; margin-top:2px; color:var(--muted); font-variant-numeric:tabular-nums;}
-.empty-stats{color:var(--muted); font-size:.85rem;}
-
-/* form */
-form{display:flex; flex-direction:column; gap:14px;}
-.row{display:flex; flex-direction:column; gap:6px;}
-.row label{font-size:.78rem; color:var(--ink-soft); display:flex; justify-content:space-between; align-items:baseline;}
-input[type="date"], input[type="text"]{
-  font-family:'Karla',sans-serif; font-size:.95rem; color:var(--ink);
-  background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
-  padding:9px 11px; width:100%;
-}
-.grid5{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;}
-@media(min-width:420px){.grid5{grid-template-columns:repeat(3,minmax(0,1fr));}}
-.field{display:flex; flex-direction:column; gap:5px; min-width:0;}
-.field .fieldlabel{font-size:.78rem; color:var(--ink-soft); display:flex; align-items:center; gap:6px;}
-.field .fieldlabel .dot{width:7px;height:7px;border-radius:50%;flex:none;}
-.inputline{position:relative;}
-.inputline input[type="number"]{
-  font-family:'Karla',sans-serif; font-variant-numeric:tabular-nums; font-size:1rem; color:var(--ink);
-  background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
-  padding:9px 34px 9px 11px; width:100%; -moz-appearance:textfield;
-}
-.inputline input[type=number]::-webkit-outer-spin-button,
-.inputline input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
-.inputline .unit{position:absolute; right:11px; top:50%; transform:translateY(-50%); font-size:.75rem; color:var(--muted);}
-input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
-
-.editing-note{font-size:.78rem; color:var(--accent-strong); background:var(--accent-soft); border-radius:8px; padding:6px 10px; display:none;}
-.editing-note.show{display:block;}
-
-button.primary{
-  font-family:'Karla',sans-serif; font-weight:700; font-size:.95rem; color:#fff;
-  background:var(--accent); border:none; border-radius:10px; padding:11px 16px; cursor:pointer;
-}
-button.primary:disabled{opacity:.5; cursor:not-allowed;}
-button.primary:hover:not(:disabled){background:var(--accent-strong);}
-.form-msg{font-size:.8rem; color:var(--danger); min-height:1em;}
-.toast{font-size:.8rem; color:var(--accent-strong); min-height:1em;}
-
-/* legend */
-.legend{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
-.chip{
-  display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--ink-soft);
-  background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:5px 10px 5px 8px;
-  cursor:pointer; user-select:none;
-}
-.chip .dot{width:9px; height:9px; border-radius:50%; flex:none;}
-.chip[aria-pressed="false"]{opacity:.4;}
-.chip[aria-pressed="false"] .dot{background:var(--muted) !important;}
-
-.chart-wrap{position:relative;}
-.chart-wrap svg{display:block; width:100%; height:auto; touch-action:none;}
-.chart-empty{color:var(--muted); font-size:.85rem; padding:20px 4px;}
-.tooltip{
-  position:absolute; pointer-events:none; background:var(--ink); color:var(--bg);
-  border-radius:8px; padding:8px 10px; font-size:.74rem; line-height:1.5;
-  box-shadow:0 4px 12px rgba(0,0,0,.18); opacity:0; transition:opacity .1s; z-index:2;
-  transform:translate(-50%,-100%); white-space:nowrap;
-}
-.tooltip .t-date{color:var(--bg); opacity:.7; margin-bottom:2px; font-variant-numeric:tabular-nums;}
-.tooltip .t-row{display:flex; align-items:center; gap:6px; font-variant-numeric:tabular-nums;}
-.tooltip .t-row .dot{width:7px;height:7px;border-radius:50%;flex:none;}
-
-/* history */
-.history-list{display:flex; flex-direction:column; gap:0;}
-.entry{
-  display:flex; align-items:center; gap:10px; padding:11px 2px; border-bottom:1px solid var(--line);
-}
-.entry:last-child{border-bottom:none;}
-.entry .edate{width:64px; flex:none; font-size:.82rem; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
-.entry .evals{flex:1; min-width:0; display:flex; flex-wrap:wrap; gap:8px 12px; font-size:.82rem;}
-.entry .evals span{display:flex; align-items:baseline; gap:4px; font-variant-numeric:tabular-nums;}
-.entry .evals .k{color:var(--muted); font-size:.7rem;}
-.entry .enote{width:100%; font-size:.76rem; color:var(--muted); margin-top:2px;}
-.entry .edel{flex:none; background:none; border:none; color:var(--muted); cursor:pointer; font-size:.78rem; padding:4px 6px;}
-.entry .edel:hover{color:var(--danger);}
-.confirm-row{display:none; gap:8px; align-items:center; padding:6px 2px 10px; font-size:.78rem; color:var(--ink-soft);}
-.confirm-row.show{display:flex;}
-.confirm-row button{font-size:.78rem; border-radius:8px; padding:5px 10px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); cursor:pointer;}
-.confirm-row button.yes{color:#fff; background:var(--danger); border-color:var(--danger);}
-
-.banner{font-size:.8rem; color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
-.empty-history{color:var(--muted); font-size:.88rem; padding:6px 2px;}
-</style>
+<meta name="apple-mobile-web-app-title" content="お腹痩せ記録">
+<meta name="theme-color" content="#FBF3EA">
+<title>お腹痩せ記録</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Karla:wght@400;500;600;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FBF3EA;
+    --card: #FFFFFF;
+    --cream: #FDF0E2;
+    --peach: #F0A27A;
+    --peach-deep: #E58A5C;
+    --peach-soft: #F8D3BD;
+    --yellow: #F5CB5C;
+    --yellow-soft: #FBE7AE;
+    --mint: #7FCFC4;
+    --mint-soft: #CDEDE8;
+    --sage: #B5D08A;
+    --lav: #A9A6D4;
+    --text: #4A3B33;
+    --muted: #A8968A;
+    --line: #F0E2D4;
+    --shadow: 0 6px 18px rgba(214, 150, 110, .16);
+    --radius: 22px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "M PLUS Rounded 1c", -apple-system, "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+    min-height: 100vh;
+  }
+  button { font-family: inherit; color: inherit; border: none; background: none; cursor: pointer; }
+  .app { max-width: 480px; margin: 0 auto; padding: 0 16px calc(110px + env(safe-area-inset-bottom)); }
+
+  header { padding: calc(18px + env(safe-area-inset-top)) 4px 8px; display: flex; align-items: flex-end; justify-content: space-between; }
+  header .sub { font-size: 12px; color: var(--muted); letter-spacing: .12em; font-weight: 700; }
+  header h1 { margin: 2px 0 0; font-size: 26px; font-weight: 800; }
+  .streak { background: var(--card); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; box-shadow: var(--shadow); white-space: nowrap; }
+  .streak b { color: var(--peach-deep); font-size: 17px; }
+
+  .view { display: none; }
+  .view.active { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { transform: translateY(6px); } to { transform: none; } }
+
+  /* week tags */
+  .week { background: var(--card); border-radius: var(--radius); padding: 14px 10px 16px; box-shadow: var(--shadow); margin-top: 10px; }
+  .week-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 10px; }
+  .week-head span { font-weight: 800; font-size: 15px; }
+  .arrow { width: 32px; height: 32px; border-radius: 50%; background: var(--cream); font-size: 16px; font-weight: 800; color: var(--peach-deep); }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .day { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .day .dow { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .day.sat .dow { color: #6FA9C9; }
+  .day.sun .dow { color: #E0805A; }
+  .tag { width: 100%; max-width: 46px; aspect-ratio: 1 / 1.05; border-radius: 14px; background: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; position: relative; transition: transform .15s; }
+  .tag:active { transform: scale(.94); }
+  .tag.today { outline: 2px solid var(--peach); outline-offset: -2px; }
+  .tag.done { background: var(--mint-soft); }
+  .tag.selected { background: var(--peach); color: #fff; box-shadow: 0 6px 14px rgba(229, 138, 92, .35); }
+  .tag .mark { font-size: 10px; line-height: 1; margin-top: 2px; height: 10px; }
+  .tag.future { opacity: .45; }
+
+  /* stamp card */
+  .stamp-card { margin-top: 16px; border-radius: var(--radius); padding: 20px; background: linear-gradient(135deg, #FCE3CF 0%, #FBEFC9 100%); box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; }
+  .stamp-btn { flex: none; width: 96px; height: 96px; border-radius: 50%; background: #fff; border: 3px dashed var(--peach); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--peach-deep); transition: transform .2s; }
+  .stamp-btn .ico { font-size: 30px; line-height: 1.1; }
+  .stamp-btn.on { border: 4px solid var(--peach-deep); background: var(--peach); color: #fff; transform: rotate(-10deg); animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: scale(.6) rotate(-30deg); } 70% { transform: scale(1.12) rotate(-6deg); } 100% { transform: scale(1) rotate(-10deg); } }
+  .stamp-text .date { font-size: 13px; color: var(--muted); font-weight: 700; }
+  .stamp-text .msg { font-size: 18px; font-weight: 800; margin-top: 4px; line-height: 1.4; }
+  .stamp-text .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .section-title { display: flex; align-items: center; justify-content: space-between; margin: 22px 4px 10px; }
+  .section-title h2 { font-size: 17px; margin: 0; font-weight: 800; }
+  .section-title small { font-size: 12px; color: var(--muted); font-weight: 700; }
+
+  /* metric cards */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .metric { border-radius: 18px; padding: 14px 14px 12px; color: #fff; position: relative; overflow: hidden; min-height: 92px; text-align: left; }
+  .metric .name { font-size: 12px; font-weight: 700; opacity: .95; }
+  .metric .val { font-size: 24px; font-weight: 800; margin-top: 4px; }
+  .metric .val small { font-size: 12px; margin-left: 2px; }
+  .metric .diff { font-size: 11px; font-weight: 700; background: rgba(255,255,255,.28); display: inline-block; padding: 2px 8px; border-radius: 999px; margin-top: 4px; }
+  .metric.empty .val { opacity: .7; }
+  .metric::after { content: ""; position: absolute; right: -18px; bottom: -18px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,.18); }
+  .m-weight { background: linear-gradient(135deg, #F0A27A, #F5C26B); grid-column: span 2; }
+  .m-underbust { background: linear-gradient(135deg, #7FCFC4, #A8D99A); }
+  .m-waist { background: linear-gradient(135deg, #F5C26B, #E9D27A); }
+  .m-kubire { background: linear-gradient(135deg, #E58A5C, #F0B07A); }
+  .m-lowerBelly { background: linear-gradient(135deg, #A9A6D4, #8FC3D9); }
+  .m-hip { background: linear-gradient(135deg, #B5D08A, #7FCFC4); grid-column: span 2; }
+
+  .primary { display: block; width: 100%; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--peach); color: #fff; font-size: 16px; font-weight: 800; box-shadow: 0 8px 18px rgba(229, 138, 92, .3); }
+  .primary:active { transform: scale(.98); }
+  .memo-box { margin-top: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.6; box-shadow: var(--shadow); }
+  .memo-box b { color: var(--peach-deep); font-size: 12px; }
+
+  /* calendar */
+  .cal { background: var(--card); border-radius: var(--radius); padding: 16px 12px; box-shadow: var(--shadow); margin-top: 10px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+  .cal-grid .dow { font-size: 11px; color: var(--muted); font-weight: 700; padding: 4px 0 8px; }
+  .cal-grid .dow:first-child { color: #E0805A; }
+  .cal-grid .dow:last-child { color: #6FA9C9; }
+  .cell { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; position: relative; }
+  .cell.blank { visibility: hidden; }
+  .cell.today { outline: 2px solid var(--peach); outline-offset: -2px; }
+  .cell.done { background: var(--peach); color: #fff; }
+  .cell.done::before { content: "✓"; position: absolute; top: 1px; right: 4px; font-size: 9px; }
+  .cell .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--mint); margin-top: 2px; }
+  .cell.done .dot { background: #fff; }
+  .cal-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .sum { background: var(--card); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); }
+  .sum .lbl { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .sum .num { font-size: 26px; font-weight: 800; color: var(--peach-deep); }
+  .sum .num small { font-size: 13px; color: var(--text); }
+  .legend { display: flex; gap: 14px; font-size: 11px; color: var(--muted); font-weight: 700; margin: 12px 4px 0; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 4px; vertical-align: -1px; margin-right: 4px; }
+
+  /* graph */
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; padding: 9px 16px; border-radius: 999px; background: var(--card); font-size: 13px; font-weight: 700; box-shadow: var(--shadow); }
+  .chip.active { background: var(--peach); color: #fff; }
+  .chart-card { background: var(--card); border-radius: var(--radius); padding: 16px 12px 10px; box-shadow: var(--shadow); margin-top: 6px; }
+  .chart-head { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 6px 6px; }
+  .chart-head .big { font-size: 28px; font-weight: 800; }
+  .chart-head .big small { font-size: 13px; }
+  .badge { padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; background: var(--mint-soft); color: #3E9C8F; }
+  .badge.up { background: var(--yellow-soft); color: #B7862A; }
+  svg text { font-family: inherit; }
+  .empty-chart { text-align: center; color: var(--muted); font-size: 13px; padding: 50px 10px; line-height: 1.7; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .table-wrap { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; padding: 6px 4px; }
+  th, td { padding: 9px 6px; text-align: center; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 700; font-size: 11px; }
+  tbody tr { border-top: 1px solid var(--line); }
+  tbody tr:active { background: var(--cream); }
+  .backup { display: flex; gap: 8px; margin-top: 18px; }
+  .ghost { flex: 1; padding: 12px; border-radius: 14px; background: var(--card); font-size: 13px; font-weight: 700; box-shadow: var(--shadow); color: var(--peach-deep); }
+  .note { font-size: 11px; color: var(--muted); line-height: 1.7; margin: 10px 4px 0; }
+
+  /* bottom nav */
+  nav { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 480px; background: rgba(255,255,255,.96); backdrop-filter: blur(10px); border-radius: 26px 26px 0 0; box-shadow: 0 -6px 20px rgba(214,150,110,.15); display: grid; grid-template-columns: 1fr 1fr 80px 1fr 1fr; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)); z-index: 10; }
+  nav button { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--muted); padding: 4px 0; }
+  nav button svg { width: 24px; height: 24px; }
+  nav button.active { color: var(--peach-deep); }
+  .fab { width: 60px; height: 60px; border-radius: 50%; background: var(--peach); color: #fff; font-size: 30px; font-weight: 400; margin: -34px auto 0; box-shadow: 0 8px 18px rgba(229,138,92,.45); display: flex !important; align-items: center; justify-content: center; }
+
+  /* sheet */
+  .overlay { position: fixed; inset: 0; background: rgba(74,59,51,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .sheet { position: fixed; left: 50%; bottom: 0; transform: translate(-50%, 100%); width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; background: var(--bg); border-radius: 28px 28px 0 0; z-index: 21; transition: transform .3s ease; }
+  .sheet.open { transform: translate(-50%, 0); }
+  .sheet-top { background: var(--peach); color: #fff; padding: 18px 20px 34px; border-radius: 28px 28px 0 0; }
+  .sheet-top .close { background: rgba(255,255,255,.25); color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .sheet-top h3 { margin: 14px 0 0; font-size: 22px; font-weight: 800; }
+  .sheet-body { background: var(--bg); margin-top: -20px; border-radius: 24px 24px 0 0; padding: 20px 20px calc(24px + env(safe-area-inset-bottom)); }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 6px; }
+  .field label small { color: var(--muted); font-weight: 700; margin-left: 4px; }
+  .input-wrap { display: flex; align-items: center; background: var(--card); border-radius: 14px; padding: 0 14px; box-shadow: 0 2px 8px rgba(214,150,110,.1); }
+  .input-wrap input, .input-wrap textarea { flex: 1; border: none; outline: none; background: none; font: inherit; font-size: 17px; font-weight: 700; padding: 13px 0; color: var(--text); width: 100%; }
+  .input-wrap textarea { font-size: 14px; font-weight: 500; resize: none; min-height: 64px; }
+  .input-wrap .unit { color: var(--muted); font-weight: 700; font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .row-btns { display: flex; gap: 10px; margin-top: 8px; }
+  .row-btns .primary { margin: 0; flex: 2; }
+  .danger { flex: 1; border-radius: 18px; background: #fff; color: #C9734C; font-weight: 700; font-size: 14px; }
+  .toast { position: fixed; left: 50%; top: calc(20px + env(safe-area-inset-top)); transform: translate(-50%, -80px); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 700; transition: transform .3s; z-index: 40; white-space: nowrap; }
+  .toast.show { transform: translate(-50%, 0); }
+</style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <p class="eyebrow">Body Measurements</p>
-    <h1>サイズログ</h1>
-    <p class="today" id="whoLine">あなたの記録（この端末に保存されます）</p>
-    <p class="today" id="todayLine"></p>
-    <div class="tape" aria-hidden="true"></div>
+<div class="app">
+  <header>
+    <div>
+      <div class="sub">BELLY BOOTCAMP</div>
+      <h1 id="title">お腹痩せ記録</h1>
+    </div>
+    <div class="streak">連続 <b id="streak">0</b> 日🔥</div>
   </header>
 
-  <div id="storageBanner" class="banner" hidden></div>
-
-  <section class="card" id="statsCard">
-    <h2 style="margin-bottom:10px;">最新の記録</h2>
-    <div id="statsBody"></div>
-  </section>
-
-  <section class="card">
-    <h2>記録する</h2>
-    <form id="entryForm" style="margin-top:12px;">
-      <div class="row">
-        <label for="dateInput">日付</label>
-        <input type="date" id="dateInput" required>
+  <!-- ホーム -->
+  <section class="view active" id="view-home">
+    <div class="week">
+      <div class="week-head">
+        <button class="arrow" id="prevWeek" aria-label="前の週">‹</button>
+        <span id="weekLabel"></span>
+        <button class="arrow" id="nextWeek" aria-label="次の週">›</button>
       </div>
-      <div class="editing-note" id="editingNote">この日の記録を編集しています。保存すると上書きされます。</div>
-      <div class="grid5" id="fieldsGrid"></div>
-      <div class="row">
-        <label for="noteInput">メモ（任意）</label>
-        <input type="text" id="noteInput" placeholder="生理前でむくみ、など">
+      <div class="days" id="days"></div>
+    </div>
+
+    <div class="stamp-card">
+      <button class="stamp-btn" id="stampBtn"></button>
+      <div class="stamp-text">
+        <div class="date" id="stampDate"></div>
+        <div class="msg" id="stampMsg"></div>
+        <div class="hint" id="stampHint"></div>
       </div>
-      <div class="form-msg" id="formMsg" role="alert"></div>
-      <div class="toast" id="formToast"></div>
-      <button type="submit" class="primary" id="saveBtn">記録する</button>
-    </form>
+    </div>
+
+    <div class="section-title">
+      <h2>この日のサイズ</h2>
+      <small>最初の記録からの変化</small>
+    </div>
+    <div class="metrics" id="metrics"></div>
+    <div id="memoArea"></div>
+    <button class="primary" id="recordBtn">この日のサイズを記録する</button>
   </section>
 
-  <section class="card">
-    <h2>変化グラフ</h2>
-    <div class="legend" id="legend"></div>
-    <div class="chart-wrap" id="chartWrap"></div>
+  <!-- カレンダー -->
+  <section class="view" id="view-cal">
+    <div class="cal">
+      <div class="week-head">
+        <button class="arrow" id="prevMonth" aria-label="前の月">‹</button>
+        <span id="monthLabel"></span>
+        <button class="arrow" id="nextMonth" aria-label="次の月">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="legend">
+        <span><i style="background:var(--peach)"></i>動いた日</span>
+        <span><i style="background:var(--mint);border-radius:50%"></i>サイズを記録した日</span>
+      </div>
+    </div>
+    <div class="cal-summary">
+      <div class="sum"><div class="lbl">今月動いた日</div><div class="num" id="monthCount">0<small> 日</small></div></div>
+      <div class="sum"><div class="lbl">これまでの合計</div><div class="num" id="totalCount">0<small> 日</small></div></div>
+    </div>
+    <p class="note">日付をタップすると、その日のページを開けます。</p>
   </section>
 
-  <section class="card">
-    <h2>記録一覧</h2>
-    <div class="history-list" id="historyList" style="margin-top:10px;"></div>
+  <!-- グラフ -->
+  <section class="view" id="view-graph">
+    <div class="chips" id="chips"></div>
+    <div class="chart-card">
+      <div class="chart-head">
+        <div>
+          <div style="font-size:12px;color:var(--muted);font-weight:700" id="chartName"></div>
+          <div class="big" id="chartLatest"></div>
+        </div>
+        <span class="badge" id="chartBadge"></span>
+      </div>
+      <div id="chart"></div>
+    </div>
+
+    <div class="section-title"><h2>記録一覧</h2><small>タップで編集</small></div>
+    <div class="table-wrap"><table id="table"></table></div>
+
+    <div class="backup">
+      <button class="ghost" id="exportBtn">バックアップを保存</button>
+      <button class="ghost" id="importBtn">バックアップから戻す</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+    <p class="note">記録はこのスマホ（ブラウザ）の中だけに保存され、ほかの人には見えません。機種変更の前は「バックアップを保存」をしておいてね。</p>
   </section>
 </div>
 
+<nav>
+  <button class="active" data-view="home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>ホーム
+  </button>
+  <button data-view="cal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>カレンダー
+  </button>
+  <button class="fab" id="fab" aria-label="記録する">＋</button>
+  <button data-view="graph">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/></svg>グラフ
+  </button>
+  <button id="navStamp">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>今日スタンプ
+  </button>
+</nav>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-top">
+    <button class="close" id="closeSheet">✕ 閉じる</button>
+    <h3 id="sheetTitle">サイズを記録</h3>
+  </div>
+  <div class="sheet-body">
+    <form id="form">
+      <div class="field">
+        <label>日付</label>
+        <div class="input-wrap"><input type="date" id="f-date" required></div>
+      </div>
+      <div class="field">
+        <label>体重</label>
+        <div class="input-wrap"><input type="number" inputmode="decimal" step="0.1" min="0" id="f-weight" placeholder="--"><span class="unit">kg</span></div>
+      </div>
+      <div class="grid2" id="sizeFields"></div>
+      <div class="field">
+        <label>メモ<small>（任意）</small></label>
+        <div class="input-wrap"><textarea id="f-memo" placeholder="体調、食事、気づいたことなど"></textarea></div>
+      </div>
+      <div class="row-btns">
+        <button type="button" class="danger" id="deleteBtn">削除</button>
+        <button type="submit" class="primary">保存する</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-(function(){
-  var FIELDS = [
-    {key:'chestUnder', label:'胸下', short:'胸下'},
-    {key:'waist', label:'腹囲', short:'腹囲'},
-    {key:'curve', label:'くびれ', short:'くびれ'},
-    {key:'lowerAbdomen', label:'下腹', short:'下腹'},
-    {key:'hip', label:'ヒップ', short:'ヒップ'}
-  ];
+const METRICS = [
+  { key: 'weight', name: '体重', unit: 'kg' },
+  { key: 'underbust', name: '胸下', unit: 'cm' },
+  { key: 'waist', name: '腹囲', unit: 'cm' },
+  { key: 'kubire', name: 'くびれ', unit: 'cm' },
+  { key: 'lowerBelly', name: '下腹', unit: 'cm' },
+  { key: 'hip', name: 'ヒップ', unit: 'cm' },
+];
+const CHART_COLORS = { weight: '#E58A5C', underbust: '#4FB3A5', waist: '#D9A53A', kubire: '#E58A5C', lowerBelly: '#8D89C9', hip: '#7FB25A' };
+const DOW = ['日', '月', '火', '水', '木', '金', '土'];
+const STORE_KEY = 'aiko-belly-log-v1';
 
-  var todayLineEl = document.getElementById('todayLine');
-  var storageBanner = document.getElementById('storageBanner');
-  var statsBody = document.getElementById('statsBody');
-  var fieldsGrid = document.getElementById('fieldsGrid');
-  var dateInput = document.getElementById('dateInput');
-  var noteInput = document.getElementById('noteInput');
-  var editingNote = document.getElementById('editingNote');
-  var entryForm = document.getElementById('entryForm');
-  var saveBtn = document.getElementById('saveBtn');
-  var formMsg = document.getElementById('formMsg');
-  var formToast = document.getElementById('formToast');
-  var legendEl = document.getElementById('legend');
-  var chartWrap = document.getElementById('chartWrap');
-  var historyList = document.getElementById('historyList');
+let data = load();
+const today = ymd(new Date());
+let selected = today;
+let calMonth = new Date();
+calMonth.setDate(1);
+let chartMetric = 'weight';
 
-  function pad(n){ return n<10 ? '0'+n : ''+n; }
-  function todayStr(){
-    var d = new Date();
-    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-  }
-  function fmtLong(s){
-    var p = s.split('-');
-    return p[0]+'年'+parseInt(p[1],10)+'月'+parseInt(p[2],10)+'日';
-  }
-  function fmtShort(s){
-    var p = s.split('-');
-    return parseInt(p[1],10)+'/'+parseInt(p[2],10);
-  }
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (d && d.records && d.stamps) return d;
+  } catch (e) {}
+  return migrateOld() || { records: {}, stamps: {} };
+}
+// 以前のサイズログ（同じURL）の記録を引き継ぐ
+function migrateOld() {
+  try {
+    const old = JSON.parse(localStorage.getItem('sizelog_entries_v1'));
+    if (!old || typeof old !== 'object') return null;
+    const map = { chestUnder: 'underbust', waist: 'waist', curve: 'kubire', lowerAbdomen: 'lowerBelly', hip: 'hip' };
+    const records = {};
+    Object.keys(old).forEach(ds => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ds) || !old[ds]) return;
+      const rec = {};
+      Object.keys(map).forEach(k => {
+        const v = parseFloat(old[ds][k]);
+        if (!isNaN(v) && v > 0) rec[map[k]] = v;
+      });
+      if (old[ds].note) rec.memo = String(old[ds].note);
+      if (Object.keys(rec).length) records[ds] = rec;
+    });
+    if (!Object.keys(records).length) return null;
+    const d = { records, stamps: {} };
+    localStorage.setItem(STORE_KEY, JSON.stringify(d));
+    return d;
+  } catch (e) { return null; }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+  catch (e) { toast('保存できませんでした（プライベートモードかも）'); }
+}
+function ymd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function parse(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+function addDays(s, n) { const d = parse(s); d.setDate(d.getDate() + n); return ymd(d); }
+function jpDate(s) { const d = parse(s); return `${d.getMonth() + 1}月${d.getDate()}日（${DOW[d.getDay()]}）`; }
+function fmt(v) { return Number.isInteger(v) ? v.toFixed(1) : (Math.round(v * 10) / 10).toFixed(1); }
+function sortedDates() { return Object.keys(data.records).sort(); }
+function firstValue(key) {
+  for (const d of sortedDates()) { const v = data.records[d][key]; if (v != null) return { date: d, v }; }
+  return null;
+}
+function latestValue(key, upTo) {
+  const ds = sortedDates().filter(d => !upTo || d <= upTo).reverse();
+  for (const d of ds) { const v = data.records[d][key]; if (v != null) return { date: d, v }; }
+  return null;
+}
 
-  var visible = {};
-  FIELDS.forEach(function(f){ visible[f.key] = true; });
-  try{
-    var stored = JSON.parse(localStorage.getItem('sizelog_visible')||'null');
-    if(stored){ FIELDS.forEach(function(f){ if(f.key in stored) visible[f.key]=!!stored[f.key]; }); }
-  }catch(e){}
-  function saveVisible(){
-    try{ localStorage.setItem('sizelog_visible', JSON.stringify(visible)); }catch(e){}
-  }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1800);
+}
 
-  // build field inputs
-  FIELDS.forEach(function(f){
-    var wrap = document.createElement('div');
-    wrap.className = 'field';
-    wrap.innerHTML =
-      '<span class="fieldlabel"><span class="dot" style="background:var(--s-'+f.key+')"></span>'+f.label+'</span>'+
-      '<span class="inputline"><input type="number" inputmode="decimal" step="0.1" min="0" max="300" id="f_'+f.key+'"><span class="unit">cm</span></span>';
-    fieldsGrid.appendChild(wrap);
+function streak() {
+  let n = 0, d = data.stamps[today] ? today : addDays(today, -1);
+  while (data.stamps[d]) { n++; d = addDays(d, -1); }
+  return n;
+}
+
+/* ---------- home ---------- */
+function weekStart(s) { const d = parse(s); const off = (d.getDay() + 6) % 7; d.setDate(d.getDate() - off); return ymd(d); }
+
+function renderWeek() {
+  const start = weekStart(selected);
+  const s = parse(start), e = parse(addDays(start, 6));
+  document.getElementById('weekLabel').textContent =
+    `${s.getMonth() + 1}/${s.getDate()} 〜 ${e.getMonth() + 1}/${e.getDate()}`;
+  const wrap = document.getElementById('days');
+  wrap.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const ds = addDays(start, i), d = parse(ds);
+    const el = document.createElement('div');
+    el.className = 'day' + (d.getDay() === 6 ? ' sat' : d.getDay() === 0 ? ' sun' : '');
+    const cls = ['tag'];
+    if (ds === today) cls.push('today');
+    if (data.stamps[ds]) cls.push('done');
+    if (ds === selected) cls.push('selected');
+    if (ds > today) cls.push('future');
+    const mark = data.stamps[ds] ? '🔥' : data.records[ds] ? '・' : '';
+    el.innerHTML = `<span class="dow">${DOW[d.getDay()]}</span><button class="${cls.join(' ')}">${d.getDate()}<span class="mark">${mark}</span></button>`;
+    el.querySelector('button').onclick = () => { selected = ds; renderHome(); };
+    wrap.appendChild(el);
+  }
+}
+
+function renderStamp() {
+  const on = !!data.stamps[selected];
+  const btn = document.getElementById('stampBtn');
+  btn.className = 'stamp-btn' + (on ? ' on' : '');
+  btn.innerHTML = on ? '<span class="ico">✓</span>DONE!' : '<span class="ico">👟</span>タップで<br>スタンプ';
+  btn.disabled = selected > today;
+  document.getElementById('stampDate').textContent = selected === today ? `今日・${jpDate(selected)}` : jpDate(selected);
+  const msgs = ['よくがんばりました！', 'えらい！今日も動けたね', 'その10分が未来を変える✨', '自分を大切にできた日🫶'];
+  document.getElementById('stampMsg').textContent = selected > today ? 'まだ先の日です'
+    : on ? msgs[parse(selected).getDate() % msgs.length] : '今日は動けた？';
+  document.getElementById('stampHint').textContent = selected > today ? ''
+    : on ? 'もう一度タップで取り消せます' : '10分でも動いたらスタンプを押そう';
+}
+
+function renderMetrics() {
+  const rec = data.records[selected] || {};
+  const wrap = document.getElementById('metrics');
+  wrap.innerHTML = METRICS.map(m => {
+    const v = rec[m.key];
+    const first = firstValue(m.key);
+    let diff = '';
+    if (v != null && first && first.date < selected) {
+      const d = v - first.v;
+      diff = `<div class="diff">${d > 0 ? '+' : d < 0 ? '−' : '±'}${fmt(Math.abs(d))}${m.unit}</div>`;
+    }
+    return `<button class="metric m-${m.key}${v == null ? ' empty' : ''}" data-key="${m.key}">
+      <div class="name">${m.name}</div>
+      <div class="val">${v == null ? '--' : fmt(v)}<small>${m.unit}</small></div>${diff}</button>`;
+  }).join('');
+  wrap.querySelectorAll('.metric').forEach(b => b.onclick = () => { chartMetric = b.dataset.key; show('graph'); });
+  document.getElementById('memoArea').innerHTML = rec.memo
+    ? `<div class="memo-box"><b>メモ</b><br>${escapeHtml(rec.memo).replace(/\n/g, '<br>')}</div>` : '';
+  document.getElementById('recordBtn').textContent = data.records[selected] ? 'この日の記録を編集する' : 'この日のサイズを記録する';
+}
+
+function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function renderHome() {
+  renderWeek(); renderStamp(); renderMetrics();
+  document.getElementById('streak').textContent = streak();
+}
+
+function toggleStamp(ds) {
+  if (ds > today) return;
+  if (data.stamps[ds]) { delete data.stamps[ds]; toast('スタンプを取り消しました'); }
+  else { data.stamps[ds] = true; toast('スタンプを押しました🔥'); }
+  save(); renderAll();
+}
+
+/* ---------- calendar ---------- */
+function renderCal() {
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  document.getElementById('monthLabel').textContent = `${y}年 ${m + 1}月`;
+  const grid = document.getElementById('calGrid');
+  let html = DOW.map(d => `<div class="dow">${d}</div>`).join('');
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  for (let i = 0; i < first; i++) html += '<div class="cell blank"></div>';
+  let count = 0;
+  for (let d = 1; d <= days; d++) {
+    const ds = ymd(new Date(y, m, d));
+    const cls = ['cell'];
+    if (ds === today) cls.push('today');
+    if (data.stamps[ds]) { cls.push('done'); count++; }
+    html += `<button class="${cls.join(' ')}" data-d="${ds}">${d}${data.records[ds] ? '<span class="dot"></span>' : ''}</button>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('button.cell').forEach(b => b.onclick = () => { selected = b.dataset.d; show('home'); });
+  document.getElementById('monthCount').innerHTML = `${count}<small> 日</small>`;
+  document.getElementById('totalCount').innerHTML = `${Object.keys(data.stamps).length}<small> 日</small>`;
+}
+
+/* ---------- graph ---------- */
+function renderChips() {
+  const wrap = document.getElementById('chips');
+  wrap.innerHTML = METRICS.map(m => `<button class="chip${m.key === chartMetric ? ' active' : ''}" data-key="${m.key}">${m.name}</button>`).join('');
+  wrap.querySelectorAll('.chip').forEach(c => c.onclick = () => { chartMetric = c.dataset.key; renderGraph(); });
+}
+
+function renderChart() {
+  const m = METRICS.find(x => x.key === chartMetric);
+  const pts = sortedDates().filter(d => data.records[d][m.key] != null).map(d => ({ d, v: data.records[d][m.key] }));
+  document.getElementById('chartName').textContent = `${m.name}の変化`;
+  const badge = document.getElementById('chartBadge');
+  const box = document.getElementById('chart');
+  if (!pts.length) {
+    document.getElementById('chartLatest').innerHTML = `--<small> ${m.unit}</small>`;
+    badge.style.display = 'none';
+    box.innerHTML = `<div class="empty-chart">まだ${m.name}の記録がありません。<br>＋ボタンから記録するとグラフになります。</div>`;
+    return;
+  }
+  const last = pts[pts.length - 1], diff = last.v - pts[0].v;
+  document.getElementById('chartLatest').innerHTML = `${fmt(last.v)}<small> ${m.unit}</small>`;
+  badge.style.display = pts.length > 1 ? '' : 'none';
+  badge.className = 'badge' + (diff > 0 ? ' up' : '');
+  badge.textContent = `スタートから ${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${fmt(Math.abs(diff))}${m.unit}`;
+
+  const W = 340, H = 210, L = 38, R = 14, T = 18, B = 30;
+  const vs = pts.map(p => p.v);
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  const pad = Math.max((hi - lo) * 0.2, 0.5); lo -= pad; hi += pad;
+  const t0 = parse(pts[0].d).getTime(), t1 = parse(last.d).getTime();
+  const x = p => pts.length === 1 ? (L + W - R) / 2 : L + (parse(p.d).getTime() - t0) / (t1 - t0) * (W - L - R);
+  const y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const color = CHART_COLORS[m.key];
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const area = `${line} L${x(last).toFixed(1)},${H - B} L${x(pts[0]).toFixed(1)},${H - B} Z`;
+  let grid = '';
+  for (let i = 0; i <= 3; i++) {
+    const v = lo + (hi - lo) * i / 3, yy = y(v);
+    grid += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="#F0E2D4" stroke-dasharray="3 4"/>
+      <text x="${L - 6}" y="${yy + 4}" text-anchor="end" font-size="10" fill="#A8968A">${fmt(v)}</text>`;
+  }
+  const md = s => { const d = parse(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+  const showLabels = pts.length <= 8;
+  const dots = pts.map((p, i) => {
+    const isEnd = i === pts.length - 1;
+    return `<circle cx="${x(p)}" cy="${y(p.v)}" r="${isEnd ? 6 : 4}" fill="#fff" stroke="${color}" stroke-width="${isEnd ? 3 : 2.5}"/>` +
+      (showLabels || isEnd || i === 0 ? `<text x="${x(p)}" y="${y(p.v) - 10}" text-anchor="middle" font-size="10" font-weight="700" fill="${color}">${fmt(p.v)}</text>` : '');
+  }).join('');
+  const xl = pts.length === 1 ? `<text x="${x(pts[0])}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#A8968A">${md(pts[0].d)}</text>`
+    : `<text x="${L}" y="${H - 8}" font-size="10" fill="#A8968A">${md(pts[0].d)}</text><text x="${W - R}" y="${H - 8}" text-anchor="end" font-size="10" fill="#A8968A">${md(last.d)}</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${m.name}のグラフ">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${pts.length > 1 ? `<path d="${area}" fill="url(#g)"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+    ${dots}${xl}</svg>`;
+}
+
+function renderTable() {
+  const ds = sortedDates().reverse();
+  const t = document.getElementById('table');
+  if (!ds.length) { t.innerHTML = '<tbody><tr><td style="color:var(--muted);padding:24px">まだ記録がありません</td></tr></tbody>'; return; }
+  t.innerHTML = `<thead><tr><th>日付</th>${METRICS.map(m => `<th>${m.name}</th>`).join('')}<th>🔥</th></tr></thead><tbody>` +
+    ds.map(d => { const r = data.records[d], dt = parse(d);
+      return `<tr data-d="${d}"><td><b>${dt.getMonth() + 1}/${dt.getDate()}</b></td>${METRICS.map(m => `<td>${r[m.key] != null ? fmt(r[m.key]) : '-'}</td>`).join('')}<td>${data.stamps[d] ? '✓' : ''}</td></tr>`;
+    }).join('') + '</tbody>';
+  t.querySelectorAll('tbody tr[data-d]').forEach(tr => tr.onclick = () => openSheet(tr.dataset.d));
+}
+
+function renderGraph() { renderChips(); renderChart(); renderTable(); }
+
+/* ---------- sheet ---------- */
+document.getElementById('sizeFields').innerHTML = METRICS.slice(1).map(m =>
+  `<div class="field"><label>${m.name}</label><div class="input-wrap"><input type="number" inputmode="decimal" step="0.1" min="0" id="f-${m.key}" placeholder="--"><span class="unit">${m.unit}</span></div></div>`).join('');
+
+function fillForm(ds) {
+  const r = data.records[ds] || {};
+  document.getElementById('f-date').value = ds;
+  METRICS.forEach(m => document.getElementById('f-' + m.key).value = r[m.key] ?? '');
+  document.getElementById('f-memo').value = r.memo || '';
+  document.getElementById('deleteBtn').style.display = data.records[ds] ? '' : 'none';
+  document.getElementById('sheetTitle').textContent = data.records[ds] ? '記録を編集' : 'サイズを記録';
+}
+function openSheet(ds) {
+  fillForm(ds || selected);
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+}
+document.getElementById('f-date').onchange = e => { if (e.target.value) fillForm(e.target.value); };
+document.getElementById('form').onsubmit = e => {
+  e.preventDefault();
+  const ds = document.getElementById('f-date').value;
+  if (!ds) return;
+  const rec = {};
+  METRICS.forEach(m => {
+    const v = parseFloat(document.getElementById('f-' + m.key).value);
+    if (!isNaN(v) && v > 0) rec[m.key] = v;
   });
+  const memo = document.getElementById('f-memo').value.trim();
+  if (memo) rec.memo = memo;
+  if (!Object.keys(rec).length) { toast('1つ以上入力してね'); return; }
+  data.records[ds] = rec;
+  save(); selected = ds; closeSheet(); renderAll(); toast('記録しました✨');
+};
+document.getElementById('deleteBtn').onclick = () => {
+  const ds = document.getElementById('f-date').value;
+  if (!confirm(`${jpDate(ds)}の記録を削除しますか？`)) return;
+  delete data.records[ds]; save(); closeSheet(); renderAll(); toast('削除しました');
+};
+document.getElementById('overlay').onclick = closeSheet;
+document.getElementById('closeSheet').onclick = closeSheet;
 
-  // legend
-  FIELDS.forEach(function(f){
-    var chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'chip';
-    chip.setAttribute('aria-pressed', visible[f.key] ? 'true':'false');
-    chip.innerHTML = '<span class="dot" style="background:var(--s-'+f.key+')"></span>'+f.label;
-    chip.addEventListener('click', function(){
-      visible[f.key] = !visible[f.key];
-      chip.setAttribute('aria-pressed', visible[f.key] ? 'true':'false');
-      saveVisible();
-      render();
-    });
-    legendEl.appendChild(chip);
-  });
+/* ---------- backup ---------- */
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `お腹痩せ記録_${today}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then(txt => {
+    const d = JSON.parse(txt);
+    if (!d.records || !d.stamps) throw new Error();
+    if (!confirm('今の記録をバックアップの内容に置き換えますか？')) return;
+    data = d; save(); renderAll(); toast('戻しました');
+  }).catch(() => toast('このファイルは読み込めませんでした'));
+  e.target.value = '';
+};
 
-  todayLineEl.textContent = fmtLong(todayStr()) + ' 現在';
-  dateInput.value = todayStr();
-  dateInput.max = todayStr();
+/* ---------- nav ---------- */
+function show(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+  document.querySelectorAll('nav [data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  if (view === 'cal') { calMonth = parse(selected); calMonth.setDate(1); }
+  renderAll();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav [data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
+document.getElementById('fab').onclick = () => openSheet(selected);
+document.getElementById('navStamp').onclick = () => { selected = today; show('home'); toggleStamp(today); };
+document.getElementById('recordBtn').onclick = () => openSheet(selected);
+document.getElementById('stampBtn').onclick = () => toggleStamp(selected);
+document.getElementById('prevWeek').onclick = () => { selected = addDays(selected, -7); renderHome(); };
+document.getElementById('nextWeek').onclick = () => { selected = addDays(selected, 7); renderHome(); };
+document.getElementById('prevMonth').onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCal(); };
+document.getElementById('nextMonth').onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCal(); };
 
-  var docsMap = {}; // date -> data
-  var storageAvailable = false;
-  var STORAGE_KEY = 'sizelog_entries_v1';
-
-  function loadDocs(){
-    try{
-      var raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    }catch(e){
-      return {};
-    }
-  }
-  function saveDocs(m){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
-  }
-
-  function num(v){
-    if(v===undefined || v===null || v==='') return null;
-    var n = Number(v);
-    return isNaN(n) ? null : n;
-  }
-
-  function sortedDates(){
-    return Object.keys(docsMap).sort();
-  }
-
-  function fillFormFromDate(dateStr){
-    var d = docsMap[dateStr];
-    if(d){
-      FIELDS.forEach(function(f){
-        var el = document.getElementById('f_'+f.key);
-        el.value = (d[f.key]===undefined || d[f.key]===null) ? '' : d[f.key];
-      });
-      noteInput.value = d.note || '';
-      editingNote.classList.add('show');
-    } else {
-      FIELDS.forEach(function(f){ document.getElementById('f_'+f.key).value = ''; });
-      noteInput.value = '';
-      editingNote.classList.remove('show');
-    }
-  }
-
-  dateInput.addEventListener('change', function(){
-    fillFormFromDate(dateInput.value);
-    formMsg.textContent=''; formToast.textContent='';
-  });
-
-  entryForm.addEventListener('submit', function(ev){
-    ev.preventDefault();
-    formMsg.textContent=''; formToast.textContent='';
-    var dateStr = dateInput.value;
-    if(!dateStr){ formMsg.textContent = '日付を選択してください。'; return; }
-    var data = { date: dateStr };
-    var any = false;
-    FIELDS.forEach(function(f){
-      var v = num(document.getElementById('f_'+f.key).value);
-      if(v!==null){ data[f.key] = v; any = true; }
-    });
-    var note = noteInput.value.trim();
-    if(note){ data.note = note; any = true; }
-    if(!any){ formMsg.textContent = '少なくとも1項目を入力してください。'; return; }
-    if(!storageAvailable){ formMsg.textContent = 'この端末では保存できません（プライベートブラウジング中などが原因の場合があります）。'; return; }
-    data.updatedAt = new Date().toISOString();
-    try{
-      docsMap[dateStr] = data;
-      saveDocs(docsMap);
-      formToast.textContent = '保存しました。';
-      render();
-      fillFormFromDate(dateInput.value);
-    }catch(e){
-      formMsg.textContent = '保存できませんでした。空き容量などをご確認ください。';
-    }
-  });
-
-  function makeDeleteRow(dateStr){
-    var row = document.createElement('div');
-    row.className = 'confirm-row';
-    row.innerHTML = '<span>'+fmtLong(dateStr)+'の記録を削除しますか？</span><button type="button" class="yes">削除する</button><button type="button" class="no">やめる</button>';
-    row.querySelector('.no').addEventListener('click', function(){ row.classList.remove('show'); });
-    row.querySelector('.yes').addEventListener('click', function(){
-      if(!storageAvailable) return;
-      delete docsMap[dateStr];
-      try{ saveDocs(docsMap); }catch(e){}
-      render();
-      fillFormFromDate(dateInput.value);
-    });
-    return row;
-  }
-
-  function renderStats(){
-    var dates = sortedDates();
-    if(dates.length===0){
-      statsBody.innerHTML = '<p class="empty-stats">まだ記録がありません。下のフォームから今日の数値を記録してみましょう。</p>';
-      return;
-    }
-    var latestDate = dates[dates.length-1];
-    var prevDate = dates.length>1 ? dates[dates.length-2] : null;
-    var latest = docsMap[latestDate];
-    var prev = prevDate ? docsMap[prevDate] : null;
-    var html = '<p class="eyebrow" style="margin-bottom:8px;">'+fmtLong(latestDate)+'</p><div class="stats">';
-    FIELDS.forEach(function(f){
-      var v = latest[f.key];
-      var deltaHtml = '';
-      if(v!==undefined && v!==null){
-        if(prev && prev[f.key]!==undefined && prev[f.key]!==null){
-          var diff = Math.round((v - prev[f.key])*10)/10;
-          if(diff === 0){ deltaHtml = '前回と同じ'; }
-          else { deltaHtml = (diff>0?'▲+':'▼')+Math.abs(diff).toFixed(1)+'cm'; }
-        } else {
-          deltaHtml = '前回データなし';
-        }
-      }
-      html += '<div class="stat"><div class="label"><span class="dot" style="background:var(--s-'+f.key+')"></span>'+f.label+'</div>'+
-        '<div class="value">'+ (v===undefined||v===null? '—' : v.toFixed ? v.toFixed(1) : v) + (v!==undefined&&v!==null?'<span class="unit">cm</span>':'') +'</div>'+
-        '<div class="delta">'+deltaHtml+'</div></div>';
-    });
-    html += '</div>';
-    statsBody.innerHTML = html;
-  }
-
-  function renderHistory(){
-    var dates = sortedDates().slice().reverse();
-    historyList.innerHTML = '';
-    if(dates.length===0){
-      historyList.innerHTML = '<p class="empty-history">記録するとここに一覧が表示されます。</p>';
-      return;
-    }
-    dates.forEach(function(dateStr){
-      var d = docsMap[dateStr];
-      var entry = document.createElement('div');
-      entry.className = 'entry';
-      var valsHtml = '';
-      FIELDS.forEach(function(f){
-        if(d[f.key]!==undefined && d[f.key]!==null){
-          valsHtml += '<span><span class="k">'+f.short+'</span>'+d[f.key].toFixed(1)+'</span>';
-        }
-      });
-      entry.innerHTML =
-        '<div class="edate">'+fmtShort(dateStr)+'</div>'+
-        '<div class="evals">'+valsHtml+(d.note?'<div class="enote">'+escapeHtml(d.note)+'</div>':'')+'</div>'+
-        '<button type="button" class="edel">削除</button>';
-      var delRow = makeDeleteRow(dateStr);
-      entry.querySelector('.edel').addEventListener('click', function(){ delRow.classList.toggle('show'); });
-      historyList.appendChild(entry);
-      historyList.appendChild(delRow);
-    });
-  }
-
-  function escapeHtml(s){
-    var d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-  }
-
-  function renderChart(){
-    var dates = sortedDates();
-    var activeFields = FIELDS.filter(function(f){ return visible[f.key]; });
-    if(dates.length===0 || activeFields.length===0){
-      chartWrap.innerHTML = '<p class="chart-empty">'+(dates.length===0 ? 'データがまだありません。' : '表示する項目を選んでください。')+'</p>';
-      return;
-    }
-    var W = 640, H = 280, padL = 42, padR = 14, padT = 16, padB = 30;
-    var innerW = W - padL - padR, innerH = H - padT - padB;
-
-    var vals = [];
-    dates.forEach(function(dt){
-      activeFields.forEach(function(f){
-        var v = docsMap[dt][f.key];
-        if(v!==undefined && v!==null) vals.push(v);
-      });
-    });
-    if(vals.length===0){
-      chartWrap.innerHTML = '<p class="chart-empty">選択中の項目にはまだ数値がありません。</p>';
-      return;
-    }
-    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
-    if(min===max){ min -= 5; max += 5; }
-    var pad = (max-min)*0.12;
-    min -= pad; max += pad;
-
-    function xAt(i){ return dates.length===1 ? padL + innerW/2 : padL + (i/(dates.length-1))*innerW; }
-    function yAt(v){ return padT + innerH - ((v-min)/(max-min))*innerH; }
-
-    var svg = '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">';
-
-    var ticks = 4;
-    for(var t=0;t<=ticks;t++){
-      var gv = min + (max-min)*(t/ticks);
-      var gy = yAt(gv);
-      svg += '<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--chart-grid)" stroke-width="1"/>';
-      svg += '<text x="'+(padL-8)+'" y="'+gy+'" fill="var(--chart-muted)" font-size="10" text-anchor="end" dominant-baseline="middle" font-family="Karla,sans-serif">'+gv.toFixed(0)+'</text>';
-    }
-
-    var idxs = dates.length===1 ? [0] : (dates.length===2 ? [0,1] : [0, Math.floor((dates.length-1)/2), dates.length-1]);
-    idxs.forEach(function(i){
-      svg += '<text x="'+xAt(i)+'" y="'+(H-8)+'" fill="var(--chart-muted)" font-size="10" text-anchor="middle" font-family="Karla,sans-serif">'+fmtShort(dates[i])+'</text>';
-    });
-
-    activeFields.forEach(function(f){
-      var d = '';
-      var open = false;
-      dates.forEach(function(dt,i){
-        var v = docsMap[dt][f.key];
-        if(v===undefined || v===null){ open = false; return; }
-        var x = xAt(i), y = yAt(v);
-        d += (open ? ' L ' : 'M ') + x.toFixed(1) + ',' + y.toFixed(1);
-        open = true;
-      });
-      if(d) svg += '<path d="'+d+'" fill="none" stroke="var(--s-'+f.key+')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-      dates.forEach(function(dt,i){
-        var v = docsMap[dt][f.key];
-        if(v===undefined || v===null) return;
-        svg += '<circle cx="'+xAt(i).toFixed(1)+'" cy="'+yAt(v).toFixed(1)+'" r="3.5" fill="var(--s-'+f.key+')"/>';
-      });
-    });
-
-    svg += '<g id="hoverLayer"></g>';
-    svg += '</svg>';
-    svg += '<div class="tooltip" id="chartTooltip"></div>';
-    chartWrap.innerHTML = svg;
-
-    var svgEl = chartWrap.querySelector('svg');
-    var hoverLayer = chartWrap.querySelector('#hoverLayer');
-    var tooltip = chartWrap.querySelector('#chartTooltip');
-
-    function showAt(i){
-      var dt = dates[i];
-      var x = xAt(i);
-      var rows = '';
-      activeFields.forEach(function(f){
-        var v = docsMap[dt][f.key];
-        if(v===undefined || v===null) return;
-        rows += '<div class="t-row"><span class="dot" style="background:var(--s-'+f.key+')"></span>'+f.short+' '+v.toFixed(1)+'cm</div>';
-      });
-      if(!rows) return;
-      hoverLayer.innerHTML = '<line x1="'+x+'" y1="'+padT+'" x2="'+x+'" y2="'+(H-padB)+'" stroke="var(--chart-muted)" stroke-width="1" stroke-dasharray="2,3"/>';
-      tooltip.innerHTML = '<div class="t-date">'+fmtLong(dt)+'</div>'+rows;
-      var rect = svgEl.getBoundingClientRect();
-      var px = (x/W)*rect.width;
-      tooltip.style.left = px + 'px';
-      tooltip.style.top = ((padT/H)*rect.height) + 'px';
-      tooltip.style.opacity = '1';
-    }
-    function hide(){ hoverLayer.innerHTML=''; tooltip.style.opacity='0'; }
-
-    function nearestIndex(clientX){
-      var rect = svgEl.getBoundingClientRect();
-      var relX = ((clientX - rect.left)/rect.width)*W;
-      var best = 0, bestD = Infinity;
-      dates.forEach(function(dt,i){
-        var dx = Math.abs(xAt(i)-relX);
-        if(dx<bestD){ bestD=dx; best=i; }
-      });
-      return best;
-    }
-    svgEl.addEventListener('mousemove', function(e){ showAt(nearestIndex(e.clientX)); });
-    svgEl.addEventListener('mouseleave', hide);
-    svgEl.addEventListener('touchstart', function(e){
-      if(e.touches[0]) showAt(nearestIndex(e.touches[0].clientX));
-    }, {passive:true});
-    svgEl.addEventListener('touchmove', function(e){
-      if(e.touches[0]) showAt(nearestIndex(e.touches[0].clientX));
-    }, {passive:true});
-    svgEl.addEventListener('touchend', hide);
-  }
-
-  function render(){
-    renderStats();
-    renderHistory();
-    renderChart();
-  }
-
-  try{
-    localStorage.setItem('sizelog_probe','1');
-    localStorage.removeItem('sizelog_probe');
-    storageAvailable = true;
-    docsMap = loadDocs();
-  }catch(e){
-    storageBanner.hidden = false;
-    storageBanner.textContent = 'この端末では保存機能を使えません（プライベートブラウジング中などが原因の場合があります）。閲覧のみ可能です。';
-  }
-
-  render();
-  fillFormFromDate(dateInput.value);
-})();
+function renderAll() { renderHome(); renderCal(); renderGraph(); }
+renderAll();
 </script>
 </body>
 </html>

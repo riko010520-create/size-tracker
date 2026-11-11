@@ -5,24 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="お腹痩せ記録">
-<meta name="theme-color" content="#FBF3EA">
+<meta name="theme-color" content="#FDF6EC">
 <title>お腹痩せ記録</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #FBF3EA;
+    --bg: #FDF6EC;
     --card: #FFFFFF;
     --cream: #FDF0E2;
-    --peach: #F0A27A;
-    --peach-deep: #E58A5C;
-    --peach-soft: #F8D3BD;
-    --yellow: #F5CB5C;
-    --yellow-soft: #FBE7AE;
-    --mint: #7FCFC4;
-    --mint-soft: #CDEDE8;
-    --sage: #B5D08A;
-    --lav: #A9A6D4;
+    --peach: #F7B88E;
+    --peach-deep: #EE9E6C;
+    --peach-soft: #FCE3D1;
+    --yellow: #F7CF6A;
+    --yellow-deep: #E9B443;
+    --yellow-soft: #FCEDC2;
     --text: #4A3B33;
     --muted: #A8968A;
     --line: #F0E2D4;
@@ -63,8 +60,8 @@
   .tag { width: 100%; max-width: 46px; aspect-ratio: 1 / 1.05; border-radius: 14px; background: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; position: relative; transition: transform .15s; }
   .tag:active { transform: scale(.94); }
   .tag.today { outline: 2px solid var(--peach); outline-offset: -2px; }
-  .tag.done { background: var(--mint-soft); }
-  .tag.selected { background: var(--peach); color: #fff; box-shadow: 0 6px 14px rgba(229, 138, 92, .35); }
+  .tag.done { background: var(--yellow-soft); }
+  .tag.selected { background: var(--peach); color: #fff; box-shadow: 0 6px 14px rgba(238, 158, 108, .3); }
   .tag .mark { font-size: 10px; line-height: 1; margin-top: 2px; height: 10px; }
   .tag.future { opacity: .45; }
 
@@ -91,14 +88,15 @@
   .metric .diff { font-size: 11px; font-weight: 700; background: rgba(255,255,255,.28); display: inline-block; padding: 2px 8px; border-radius: 999px; margin-top: 4px; }
   .metric.empty .val { opacity: .7; }
   .metric::after { content: ""; position: absolute; right: -18px; bottom: -18px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,.18); }
-  .m-weight { background: linear-gradient(135deg, #F0A27A, #F5C26B); grid-column: span 2; }
-  .m-underbust { background: linear-gradient(135deg, #7FCFC4, #A8D99A); }
-  .m-waist { background: linear-gradient(135deg, #F5C26B, #E9D27A); }
-  .m-kubire { background: linear-gradient(135deg, #E58A5C, #F0B07A); }
-  .m-lowerBelly { background: linear-gradient(135deg, #A9A6D4, #8FC3D9); }
-  .m-hip { background: linear-gradient(135deg, #B5D08A, #7FCFC4); grid-column: span 2; }
+  .metric { text-shadow: 0 1px 2px rgba(180, 110, 50, .25); }
+  .m-weight { background: linear-gradient(135deg, #F7B88E, #F7CF6A); grid-column: span 2; }
+  .m-underbust { background: linear-gradient(135deg, #EDB54A, #F5CD6A); }
+  .m-waist { background: linear-gradient(135deg, #F4AA7C, #F7C493); }
+  .m-kubire { background: linear-gradient(135deg, #F1A86F, #F5BE6A); }
+  .m-lowerBelly { background: linear-gradient(135deg, #EFB85C, #F6D07E); }
+  .m-hip { background: linear-gradient(135deg, #F6C27A, #F4AE86); grid-column: span 2; }
 
-  .primary { display: block; width: 100%; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--peach); color: #fff; font-size: 16px; font-weight: 800; box-shadow: 0 8px 18px rgba(229, 138, 92, .3); }
+  .primary { display: block; width: 100%; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--peach); color: #fff; font-size: 16px; font-weight: 800; box-shadow: 0 8px 18px rgba(238, 158, 108, .28); }
   .primary:active { transform: scale(.98); }
   .memo-box { margin-top: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.6; box-shadow: var(--shadow); }
   .memo-box b { color: var(--peach-deep); font-size: 12px; }
@@ -112,10 +110,12 @@
   .cell { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; position: relative; }
   .cell.blank { visibility: hidden; }
   .cell.today { outline: 2px solid var(--peach); outline-offset: -2px; }
-  .cell.done { background: var(--peach); color: #fff; }
-  .cell.done::before { content: "✓"; position: absolute; top: 1px; right: 4px; font-size: 9px; }
-  .cell .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--mint); margin-top: 2px; }
-  .cell.done .dot { background: #fff; }
+  .cell.done { background: var(--yellow-soft); }
+  .cell.done .n { position: absolute; top: 2px; left: 5px; font-size: 9px; color: #B7862A; }
+  .cell .stamp { width: 78%; aspect-ratio: 1; border-radius: 50%; background: var(--peach); border: 2px solid #fff; box-shadow: 0 0 0 1.5px var(--peach-deep); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; font-size: 6.5px; font-weight: 800; letter-spacing: .04em; transform: rotate(-12deg); margin-top: 3px; }
+  .cell .stamp b { font-size: 14px; margin-bottom: 1px; }
+  .cell .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow-deep); margin-top: 2px; }
+  .cell.done .dot { position: absolute; bottom: 3px; right: 4px; margin: 0; }
   .cal-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
   .sum { background: var(--card); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); }
   .sum .lbl { font-size: 12px; color: var(--muted); font-weight: 700; }
@@ -133,8 +133,8 @@
   .chart-head { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 6px 6px; }
   .chart-head .big { font-size: 28px; font-weight: 800; }
   .chart-head .big small { font-size: 13px; }
-  .badge { padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; background: var(--mint-soft); color: #3E9C8F; }
-  .badge.up { background: var(--yellow-soft); color: #B7862A; }
+  .badge { padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; background: var(--yellow-soft); color: #B7862A; }
+  .badge.up { background: var(--peach-soft); color: #C9734C; }
   svg text { font-family: inherit; }
   .empty-chart { text-align: center; color: var(--muted); font-size: 13px; padding: 50px 10px; line-height: 1.7; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -152,7 +152,7 @@
   nav button { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--muted); padding: 4px 0; }
   nav button svg { width: 24px; height: 24px; }
   nav button.active { color: var(--peach-deep); }
-  .fab { width: 60px; height: 60px; border-radius: 50%; background: var(--peach); color: #fff; font-size: 30px; font-weight: 400; margin: -34px auto 0; box-shadow: 0 8px 18px rgba(229,138,92,.45); display: flex !important; align-items: center; justify-content: center; }
+  .fab { width: 60px; height: 60px; border-radius: 50%; background: var(--peach); color: #fff; font-size: 30px; font-weight: 400; margin: -34px auto 0; box-shadow: 0 8px 18px rgba(238,158,108,.4); display: flex !important; align-items: center; justify-content: center; }
 
   /* sheet */
   .overlay { position: fixed; inset: 0; background: rgba(74,59,51,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; }
@@ -176,6 +176,24 @@
   .danger { flex: 1; border-radius: 18px; background: #fff; color: #C9734C; font-weight: 700; font-size: 14px; }
   .toast { position: fixed; left: 50%; top: calc(20px + env(safe-area-inset-top)); transform: translate(-50%, -80px); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 700; transition: transform .3s; z-index: 40; white-space: nowrap; }
   .toast.show { transform: translate(-50%, 0); }
+
+  /* voice */
+  .voice-card { margin-top: 16px; background: var(--card); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 14px; }
+  .voice-card .who { width: 46px; height: 46px; flex: none; border-radius: 50%; background: linear-gradient(135deg, var(--peach), var(--yellow)); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .voice-card .info { flex: 1; min-width: 0; }
+  .voice-card .ttl { font-size: 14px; font-weight: 800; }
+  .voice-card .st { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+  .bar { height: 5px; border-radius: 999px; background: var(--yellow-soft); margin-top: 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--peach-deep); border-radius: inherit; }
+  .play { flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--peach); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 14px rgba(238, 158, 108, .3); }
+  .play svg { width: 18px; height: 18px; }
+  .play:disabled { background: var(--line); box-shadow: none; }
+  .voice-hero { margin-top: 10px; border-radius: var(--radius); padding: 20px; background: linear-gradient(135deg, #FCE3CF 0%, #FBEFC9 100%); box-shadow: var(--shadow); }
+  .voice-hero h2 { margin: 0; font-size: 19px; font-weight: 800; }
+  .voice-hero p { margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: #7A665A; }
+  .voice-list .voice-card { margin-top: 10px; }
+  .voice-card.today-voice { outline: 2px solid var(--peach); outline-offset: -2px; }
+  .empty-voice { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 10px; line-height: 1.7; }
 </style>
 </head>
 <body>
@@ -198,6 +216,8 @@
       </div>
       <div class="days" id="days"></div>
     </div>
+
+    <div id="homeVoice"></div>
 
     <div class="stamp-card">
       <button class="stamp-btn" id="stampBtn"></button>
@@ -227,8 +247,8 @@
       </div>
       <div class="cal-grid" id="calGrid"></div>
       <div class="legend">
-        <span><i style="background:var(--peach)"></i>動いた日</span>
-        <span><i style="background:var(--mint);border-radius:50%"></i>サイズを記録した日</span>
+        <span><i style="background:var(--peach);border-radius:50%"></i>スタンプ（動いた日）</span>
+        <span><i style="background:var(--yellow-deep);border-radius:50%"></i>サイズを記録した日</span>
       </div>
     </div>
     <div class="cal-summary">
@@ -262,6 +282,17 @@
     </div>
     <p class="note">記録はこのスマホ（ブラウザ）の中だけに保存され、ほかの人には見えません。機種変更の前は「バックアップを保存」をしておいてね。</p>
   </section>
+
+  <!-- ボイス -->
+  <section class="view" id="view-voice">
+    <div class="voice-hero">
+      <h2>愛子からの朝の応援ボイス📣</h2>
+      <p>毎朝ここに届くよ。聞いたら、今日も10分だけ動いてみよう🔥</p>
+    </div>
+    <div class="section-title"><h2>これまでのボイス</h2><small id="voiceCount"></small></div>
+    <div class="voice-list" id="voiceList"></div>
+  </section>
+  <audio id="audio" preload="none"></audio>
 </div>
 
 <nav>
@@ -275,8 +306,8 @@
   <button data-view="graph">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/></svg>グラフ
   </button>
-  <button id="navStamp">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>今日スタンプ
+  <button data-view="voice">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/></svg>ボイス
   </button>
 </nav>
 
@@ -320,7 +351,7 @@ const METRICS = [
   { key: 'lowerBelly', name: '下腹', unit: 'cm' },
   { key: 'hip', name: 'ヒップ', unit: 'cm' },
 ];
-const CHART_COLORS = { weight: '#E58A5C', underbust: '#4FB3A5', waist: '#D9A53A', kubire: '#E58A5C', lowerBelly: '#8D89C9', hip: '#7FB25A' };
+const CHART_COLORS = { weight: '#EE9E6C', underbust: '#E2A93A', waist: '#EE9E6C', kubire: '#E2A93A', lowerBelly: '#EE9E6C', hip: '#E2A93A' };
 const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 const STORE_KEY = 'aiko-belly-log-v1';
 
@@ -459,7 +490,7 @@ function renderMetrics() {
 function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 function renderHome() {
-  renderWeek(); renderStamp(); renderMetrics();
+  renderWeek(); renderHomeVoice(); renderStamp(); renderMetrics();
   document.getElementById('streak').textContent = streak();
 }
 
@@ -485,7 +516,8 @@ function renderCal() {
     const cls = ['cell'];
     if (ds === today) cls.push('today');
     if (data.stamps[ds]) { cls.push('done'); count++; }
-    html += `<button class="${cls.join(' ')}" data-d="${ds}">${d}${data.records[ds] ? '<span class="dot"></span>' : ''}</button>`;
+    const stamp = data.stamps[ds] ? '<span class="stamp"><b>✓</b>DONE</span>' : '';
+    html += `<button class="${cls.join(' ')}" data-d="${ds}"><span class="n">${d}</span>${stamp}${data.records[ds] ? '<span class="dot"></span>' : ''}</button>`;
   }
   grid.innerHTML = html;
   grid.querySelectorAll('button.cell').forEach(b => b.onclick = () => { selected = b.dataset.d; show('home'); });
@@ -637,7 +669,6 @@ function show(view) {
 }
 document.querySelectorAll('nav [data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
 document.getElementById('fab').onclick = () => openSheet(selected);
-document.getElementById('navStamp').onclick = () => { selected = today; show('home'); toggleStamp(today); };
 document.getElementById('recordBtn').onclick = () => openSheet(selected);
 document.getElementById('stampBtn').onclick = () => toggleStamp(selected);
 document.getElementById('prevWeek').onclick = () => { selected = addDays(selected, -7); renderHome(); };
@@ -645,8 +676,71 @@ document.getElementById('nextWeek').onclick = () => { selected = addDays(selecte
 document.getElementById('prevMonth').onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCal(); };
 document.getElementById('nextMonth').onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCal(); };
 
-function renderAll() { renderHome(); renderCal(); renderGraph(); }
+/* ---------- voice ---------- */
+// ボイスは GitHub の voices フォルダに「2026-11-12.m4a」のように日付の名前で置く
+const VOICE_API = 'https://api.github.com/repos/riko010520-create/size-tracker/contents/voices';
+const VOICE_RE = /^(\d{4}-\d{2}-\d{2})\.(m4a|mp3|wav|aac|mp4)$/i;
+let voices = {};
+let voicesLoaded = false;
+let playing = null;
+const audio = document.getElementById('audio');
+const PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>';
+const PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>';
+
+async function loadVoices() {
+  try {
+    const r = await fetch(VOICE_API, { cache: 'no-store' });
+    if (r.ok) {
+      (await r.json()).forEach(f => {
+        const m = f.name.match(VOICE_RE);
+        if (m) voices[m[1]] = 'voices/' + encodeURIComponent(f.name);
+      });
+    }
+  } catch (e) {}
+  voicesLoaded = true;
+  renderHomeVoice(); renderVoiceList(); renderCal();
+}
+
+function fmtTime(t) { if (!isFinite(t)) return '0:00'; const s = Math.floor(t); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+
+function voiceCard(ds, extra) {
+  const has = !!voices[ds], on = playing === ds && !audio.paused;
+  const st = !has ? (voicesLoaded ? 'まだ届いていません' : '読み込み中…') : playing === ds ? `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}` : 'タップで再生';
+  return `<div class="voice-card${extra || ''}" data-voice="${ds}">
+    <div class="who">📣</div>
+    <div class="info"><div class="ttl">${ds === today ? '今日' : jpDate(ds)}の応援ボイス</div><div class="st">${st}</div>
+      <div class="bar"><i style="width:${playing === ds && audio.duration ? audio.currentTime / audio.duration * 100 : 0}%"></i></div></div>
+    <button class="play" ${has ? '' : 'disabled'} aria-label="再生">${on ? PAUSE_ICON : PLAY_ICON}</button></div>`;
+}
+function bindVoice(root) {
+  root.querySelectorAll('[data-voice] .play').forEach(b => b.onclick = () => togglePlay(b.closest('[data-voice]').dataset.voice));
+}
+function renderHomeVoice() {
+  const el = document.getElementById('homeVoice');
+  if (selected > today) { el.innerHTML = ''; return; }
+  el.innerHTML = voiceCard(selected);
+  bindVoice(el);
+}
+function renderVoiceList() {
+  const ds = Object.keys(voices).filter(d => d <= today).sort().reverse();
+  document.getElementById('voiceCount').textContent = ds.length ? `${ds.length}件` : '';
+  const el = document.getElementById('voiceList');
+  el.innerHTML = ds.length ? ds.map(d => voiceCard(d, d === today ? ' today-voice' : '')).join('')
+    : `<div class="empty-voice">${voicesLoaded ? 'まだボイスは届いていません。<br>届いたらここに並びます🎧' : '読み込み中…'}</div>`;
+  bindVoice(el);
+}
+function togglePlay(ds) {
+  if (playing === ds && !audio.paused) { audio.pause(); return; }
+  if (playing !== ds) { audio.src = voices[ds]; playing = ds; }
+  audio.play().catch(() => toast('再生できませんでした'));
+}
+function refreshVoiceUI() { renderHomeVoice(); renderVoiceList(); }
+['play', 'pause', 'timeupdate', 'loadedmetadata', 'ended'].forEach(ev => audio.addEventListener(ev, refreshVoiceUI));
+audio.addEventListener('error', () => { if (playing) { toast('ボイスを読み込めませんでした'); playing = null; refreshVoiceUI(); } });
+
+function renderAll() { renderHome(); renderCal(); renderGraph(); renderVoiceList(); }
 renderAll();
+loadVoices();
 </script>
 </body>
 </html>

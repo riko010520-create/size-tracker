@@ -21,6 +21,7 @@
     --yellow-deep: #E9B443;
     --yellow-soft: #FCEDC2;
     --text: #4A3B33;
+    --text-soft: #8A6B57;
     --muted: #A8968A;
     --line: #F0E2D4;
     --shadow: 0 6px 18px rgba(214, 150, 110, .16);
@@ -81,7 +82,7 @@
 
   /* metric cards */
   .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .metric { border-radius: 18px; padding: 14px 14px 12px; color: var(--text); position: relative; overflow: hidden; min-height: 92px; text-align: left; }
+  .metric { border-radius: 18px; padding: 14px 14px 12px; color: var(--text-soft); position: relative; overflow: hidden; min-height: 92px; text-align: left; }
   .metric .name { font-size: 12px; font-weight: 700; opacity: .95; }
   .metric .val { font-size: 24px; font-weight: 800; margin-top: 4px; }
   .metric .val small { font-size: 12px; margin-left: 2px; }
@@ -95,7 +96,7 @@
   .m-lowerBelly { background: linear-gradient(135deg, #EFB85C, #F6D07E); }
   .m-hip { background: linear-gradient(135deg, #F6C27A, #F4AE86); grid-column: span 2; }
 
-  .primary { display: block; width: 100%; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--peach); color: var(--text); font-size: 16px; font-weight: 800; box-shadow: 0 8px 18px rgba(238, 158, 108, .28); }
+  .primary { display: block; width: 100%; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--peach); color: var(--text-soft); font-size: 16px; font-weight: 800; box-shadow: 0 8px 18px rgba(238, 158, 108, .28); }
   .primary:active { transform: scale(.98); }
   .memo-box { margin-top: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.6; box-shadow: var(--shadow); }
   .memo-box b { color: var(--peach-deep); font-size: 12px; }
@@ -128,7 +129,8 @@
   .chips::-webkit-scrollbar { display: none; }
   .chip { flex: none; padding: 9px 16px; border-radius: 999px; background: var(--card); font-size: 13px; font-weight: 700; box-shadow: var(--shadow); }
   .chip.active { background: var(--peach); color: #fff; }
-  .chart-card { background: var(--card); border-radius: var(--radius); padding: 16px 12px 10px; box-shadow: var(--shadow); margin-top: 6px; }
+  .chart-card { background: var(--card); border-radius: var(--radius); padding: 16px 12px 10px; box-shadow: var(--shadow); margin-top: 12px; }
+  .chart-card:first-child { margin-top: 6px; }
   .chart-head { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 6px 6px; }
   .chart-head .big { font-size: 28px; font-weight: 800; }
   .chart-head .big small { font-size: 13px; }
@@ -260,16 +262,7 @@
   <!-- グラフ -->
   <section class="view" id="view-graph">
     <div class="chips" id="chips"></div>
-    <div class="chart-card">
-      <div class="chart-head">
-        <div>
-          <div style="font-size:12px;color:var(--muted);font-weight:700" id="chartName"></div>
-          <div class="big" id="chartLatest"></div>
-        </div>
-        <span class="badge" id="chartBadge"></span>
-      </div>
-      <div id="chart"></div>
-    </div>
+    <div id="charts"></div>
 
     <div class="section-title"><h2>記録一覧</h2><small>タップで編集</small></div>
     <div class="table-wrap"><table id="table"></table></div>
@@ -359,7 +352,7 @@ const today = ymd(new Date());
 let selected = today;
 let calMonth = new Date();
 calMonth.setDate(1);
-let chartMetric = 'weight';
+let chartMetric = 'all';
 
 function load() {
   try {
@@ -527,27 +520,23 @@ function renderCal() {
 /* ---------- graph ---------- */
 function renderChips() {
   const wrap = document.getElementById('chips');
-  wrap.innerHTML = METRICS.map(m => `<button class="chip${m.key === chartMetric ? ' active' : ''}" data-key="${m.key}">${m.name}</button>`).join('');
+  const items = [{ key: 'all', name: 'すべて' }, ...METRICS];
+  wrap.innerHTML = items.map(m => `<button class="chip${m.key === chartMetric ? ' active' : ''}" data-key="${m.key}">${m.name}</button>`).join('');
   wrap.querySelectorAll('.chip').forEach(c => c.onclick = () => { chartMetric = c.dataset.key; renderGraph(); });
 }
 
-function renderChart() {
-  const m = METRICS.find(x => x.key === chartMetric);
+function chartCard(key) {
+  const m = METRICS.find(x => x.key === key);
   const pts = sortedDates().filter(d => data.records[d][m.key] != null).map(d => ({ d, v: data.records[d][m.key] }));
-  document.getElementById('chartName').textContent = `${m.name}の変化`;
-  const badge = document.getElementById('chartBadge');
-  const box = document.getElementById('chart');
+  const head = (latest, badge) => `<div class="chart-head"><div>
+      <div style="font-size:12px;color:var(--muted);font-weight:700">${m.name}の変化</div>
+      <div class="big">${latest}<small> ${m.unit}</small></div></div>${badge}</div>`;
   if (!pts.length) {
-    document.getElementById('chartLatest').innerHTML = `--<small> ${m.unit}</small>`;
-    badge.style.display = 'none';
-    box.innerHTML = `<div class="empty-chart">まだ${m.name}の記録がありません。<br>＋ボタンから記録するとグラフになります。</div>`;
-    return;
+    return `<div class="chart-card">${head('--', '')}<div class="empty-chart">まだ${m.name}の記録がありません。<br>＋ボタンから記録するとグラフになります。</div></div>`;
   }
   const last = pts[pts.length - 1], diff = last.v - pts[0].v;
-  document.getElementById('chartLatest').innerHTML = `${fmt(last.v)}<small> ${m.unit}</small>`;
-  badge.style.display = pts.length > 1 ? '' : 'none';
-  badge.className = 'badge' + (diff > 0 ? ' up' : '');
-  badge.textContent = `スタートから ${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${fmt(Math.abs(diff))}${m.unit}`;
+  const badge = pts.length > 1
+    ? `<span class="badge${diff > 0 ? ' up' : ''}">スタートから ${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${fmt(Math.abs(diff))}${m.unit}</span>` : '';
 
   const W = 340, H = 210, L = 38, R = 14, T = 18, B = 30;
   const vs = pts.map(p => p.v);
@@ -574,10 +563,15 @@ function renderChart() {
   }).join('');
   const xl = pts.length === 1 ? `<text x="${x(pts[0])}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#A8968A">${md(pts[0].d)}</text>`
     : `<text x="${L}" y="${H - 8}" font-size="10" fill="#A8968A">${md(pts[0].d)}</text><text x="${W - R}" y="${H - 8}" text-anchor="end" font-size="10" fill="#A8968A">${md(last.d)}</text>`;
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${m.name}のグラフ">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
-    ${grid}${pts.length > 1 ? `<path d="${area}" fill="url(#g)"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
-    ${dots}${xl}</svg>`;
+  return `<div class="chart-card">${head(fmt(last.v), badge)}<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${m.name}のグラフ">
+    <defs><linearGradient id="g-${m.key}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${pts.length > 1 ? `<path d="${area}" fill="url(#g-${m.key})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+    ${dots}${xl}</svg></div>`;
+}
+
+function renderChart() {
+  const keys = chartMetric === 'all' ? METRICS.map(m => m.key) : [chartMetric];
+  document.getElementById('charts').innerHTML = keys.map(chartCard).join('');
 }
 
 function renderTable() {

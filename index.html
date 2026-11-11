@@ -136,6 +136,18 @@
   .chart-head .big small { font-size: 13px; }
   .badge { padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; background: var(--yellow-soft); color: #B7862A; }
   .badge.up { background: var(--peach-soft); color: #C9734C; }
+  .legend-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 4px 8px; }
+  .lchip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; background: var(--cream); font-size: 11px; font-weight: 700; }
+  .lchip i, .all-row i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .lchip.off { opacity: .35; }
+  .all-rows { margin-top: 6px; border-top: 1px solid var(--line); padding: 4px 6px 2px; }
+  .all-row { display: grid; grid-template-columns: 14px 1fr 70px 80px; align-items: center; gap: 6px; padding: 7px 0; font-size: 13px; font-weight: 700; }
+  .all-row b { text-align: right; }
+  .all-row em { font-style: normal; text-align: right; color: #B7862A; }
+  .all-row em.up { color: #C9734C; }
+  .all-row.hd { font-size: 10px; color: var(--muted); padding: 4px 0 0; }
+  .all-row.hd em { color: var(--muted); }
+  .all-row.off { opacity: .4; }
   svg text { font-family: inherit; }
   .empty-chart { text-align: center; color: var(--muted); font-size: 13px; padding: 50px 10px; line-height: 1.7; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -569,9 +581,73 @@ function chartCard(key) {
     ${dots}${xl}</svg></div>`;
 }
 
+// 「すべて」用：1つのグラフに全部の線を重ねる（サイズは左の目盛り、体重は右の目盛り）
+const ALL_COLORS = { weight: '#F0A070', underbust: '#E8B53A', waist: '#DE7546', kubire: '#9A6B4F', lowerBelly: '#A9A13A', hip: '#7FA7C0' };
+const hiddenLines = new Set();
+
+function allCard() {
+  const series = METRICS.map(m => ({ m, pts: sortedDates().filter(d => data.records[d][m.key] != null).map(d => ({ d, v: data.records[d][m.key] })) }));
+  const legend = `<div class="legend-chips">${METRICS.map(m =>
+    `<button class="lchip${hiddenLines.has(m.key) ? ' off' : ''}" data-key="${m.key}"><i style="background:${ALL_COLORS[m.key]}"></i>${m.name}</button>`).join('')}</div>`;
+  const head = `<div class="chart-head"><div><div style="font-size:12px;color:var(--muted);font-weight:700">すべての変化</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px">左の目盛り：サイズ（cm）／右の目盛り：体重（kg）</div></div></div>`;
+  const shown = series.filter(s => s.pts.length && !hiddenLines.has(s.m.key));
+  if (!series.some(s => s.pts.length)) {
+    return `<div class="chart-card">${head}<div class="empty-chart">まだ記録がありません。<br>＋ボタンから記録するとグラフになります。</div></div>`;
+  }
+
+  const W = 340, H = 280, L = 34, R = 34, T = 16, B = 28;
+  const dates = [...new Set(shown.flatMap(s => s.pts.map(p => p.d)))].sort();
+  const t0 = dates.length ? parse(dates[0]).getTime() : 0, t1 = dates.length ? parse(dates[dates.length - 1]).getTime() : 0;
+  const x = d => t1 === t0 ? (L + W - R) / 2 : L + (parse(d).getTime() - t0) / (t1 - t0) * (W - L - R);
+  const range = list => {
+    const vs = list.flatMap(s => s.pts.map(p => p.v));
+    if (!vs.length) return null;
+    let lo = Math.min(...vs), hi = Math.max(...vs);
+    const pad = Math.max((hi - lo) * 0.12, 0.5);
+    return [lo - pad, hi + pad];
+  };
+  const cm = range(shown.filter(s => s.m.key !== 'weight'));
+  const kg = range(shown.filter(s => s.m.key === 'weight'));
+  const yOf = r => v => T + (r[1] - v) / (r[1] - r[0]) * (H - T - B);
+
+  let grid = '';
+  for (let i = 0; i <= 4; i++) {
+    const yy = T + (H - T - B) * i / 4;
+    grid += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="#F0E2D4" stroke-dasharray="3 4"/>`;
+    if (cm) grid += `<text x="${L - 5}" y="${yy + 4}" text-anchor="end" font-size="9" fill="#A8968A">${fmt(cm[1] - (cm[1] - cm[0]) * i / 4)}</text>`;
+    if (kg) grid += `<text x="${W - R + 5}" y="${yy + 4}" font-size="9" fill="${ALL_COLORS.weight}">${fmt(kg[1] - (kg[1] - kg[0]) * i / 4)}</text>`;
+  }
+  const lines = shown.map(s => {
+    const y = yOf(s.m.key === 'weight' ? kg : cm), c = ALL_COLORS[s.m.key];
+    const path = s.pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.d).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+    const dots = s.pts.map(p => `<circle cx="${x(p.d)}" cy="${y(p.v)}" r="3" fill="#fff" stroke="${c}" stroke-width="2"/>`).join('');
+    return `<path d="${path}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"${s.m.key === 'weight' ? ' stroke-dasharray="6 4"' : ''}/>${dots}`;
+  }).join('');
+  const md = s => { const d = parse(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+  const xl = !dates.length ? '' : dates.length === 1
+    ? `<text x="${x(dates[0])}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#A8968A">${md(dates[0])}</text>`
+    : `<text x="${L}" y="${H - 8}" font-size="10" fill="#A8968A">${md(dates[0])}</text><text x="${W - R}" y="${H - 8}" text-anchor="end" font-size="10" fill="#A8968A">${md(dates[dates.length - 1])}</text>`;
+
+  const rows = series.filter(s => s.pts.length).map(s => {
+    const first = s.pts[0].v, last = s.pts[s.pts.length - 1].v, diff = last - first;
+    return `<div class="all-row${hiddenLines.has(s.m.key) ? ' off' : ''}"><i style="background:${ALL_COLORS[s.m.key]}"></i><span>${s.m.name}</span>
+      <b>${fmt(last)}${s.m.unit}</b><em class="${diff > 0 ? 'up' : ''}">${s.pts.length > 1 ? `${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${fmt(Math.abs(diff))}` : '-'}</em></div>`;
+  }).join('');
+
+  return `<div class="chart-card">${head}${legend}
+    <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="すべての変化のグラフ">${grid}${lines}${xl}</svg>
+    <div class="all-rows"><div class="all-row hd"><i></i><span></span><b>いま</b><em>スタートから</em></div>${rows}</div></div>`;
+}
+
 function renderChart() {
-  const keys = chartMetric === 'all' ? METRICS.map(m => m.key) : [chartMetric];
-  document.getElementById('charts').innerHTML = keys.map(chartCard).join('');
+  const box = document.getElementById('charts');
+  box.innerHTML = chartMetric === 'all' ? allCard() : chartCard(chartMetric);
+  box.querySelectorAll('.lchip').forEach(b => b.onclick = () => {
+    const k = b.dataset.key;
+    hiddenLines.has(k) ? hiddenLines.delete(k) : hiddenLines.add(k);
+    renderChart();
+  });
 }
 
 function renderTable() {

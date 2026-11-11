@@ -81,14 +81,13 @@
 
   /* metric cards */
   .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .metric { border-radius: 18px; padding: 14px 14px 12px; color: #fff; position: relative; overflow: hidden; min-height: 92px; text-align: left; }
+  .metric { border-radius: 18px; padding: 14px 14px 12px; color: var(--text); position: relative; overflow: hidden; min-height: 92px; text-align: left; }
   .metric .name { font-size: 12px; font-weight: 700; opacity: .95; }
   .metric .val { font-size: 24px; font-weight: 800; margin-top: 4px; }
   .metric .val small { font-size: 12px; margin-left: 2px; }
-  .metric .diff { font-size: 11px; font-weight: 700; background: rgba(255,255,255,.28); display: inline-block; padding: 2px 8px; border-radius: 999px; margin-top: 4px; }
+  .metric .diff { font-size: 11px; font-weight: 700; background: rgba(255,255,255,.5); display: inline-block; padding: 2px 8px; border-radius: 999px; margin-top: 4px; }
   .metric.empty .val { opacity: .7; }
   .metric::after { content: ""; position: absolute; right: -18px; bottom: -18px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,.18); }
-  .metric { text-shadow: 0 1px 2px rgba(180, 110, 50, .25); }
   .m-weight { background: linear-gradient(135deg, #F7B88E, #F7CF6A); grid-column: span 2; }
   .m-underbust { background: linear-gradient(135deg, #EDB54A, #F5CD6A); }
   .m-waist { background: linear-gradient(135deg, #F4AA7C, #F7C493); }
@@ -96,7 +95,7 @@
   .m-lowerBelly { background: linear-gradient(135deg, #EFB85C, #F6D07E); }
   .m-hip { background: linear-gradient(135deg, #F6C27A, #F4AE86); grid-column: span 2; }
 
-  .primary { display: block; width: 100%; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--peach); color: #fff; font-size: 16px; font-weight: 800; box-shadow: 0 8px 18px rgba(238, 158, 108, .28); }
+  .primary { display: block; width: 100%; margin-top: 14px; padding: 16px; border-radius: 18px; background: var(--peach); color: var(--text); font-size: 16px; font-weight: 800; box-shadow: 0 8px 18px rgba(238, 158, 108, .28); }
   .primary:active { transform: scale(.98); }
   .memo-box { margin-top: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.6; box-shadow: var(--shadow); }
   .memo-box b { color: var(--peach-deep); font-size: 12px; }
@@ -286,7 +285,7 @@
   <!-- ボイス -->
   <section class="view" id="view-voice">
     <div class="voice-hero">
-      <h2>愛子からの朝の応援ボイス📣</h2>
+      <h2>aikoからの朝の応援ボイス📣</h2>
       <p>毎朝ここに届くよ。聞いたら、今日も10分だけ動いてみよう🔥</p>
     </div>
     <div class="section-title"><h2>これまでのボイス</h2><small id="voiceCount"></small></div>
@@ -708,7 +707,7 @@ function voiceCard(ds, extra) {
   const st = !has ? (voicesLoaded ? 'まだ届いていません' : '読み込み中…') : playing === ds ? `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}` : 'タップで再生';
   return `<div class="voice-card${extra || ''}" data-voice="${ds}">
     <div class="who">📣</div>
-    <div class="info"><div class="ttl">${ds === today ? '今日' : jpDate(ds)}の応援ボイス</div><div class="st">${st}</div>
+    <div class="info"><div class="ttl">aikoからの応援ボイス</div><div class="st">${ds === today ? '今日' : jpDate(ds)}・${st}</div>
       <div class="bar"><i style="width:${playing === ds && audio.duration ? audio.currentTime / audio.duration * 100 : 0}%"></i></div></div>
     <button class="play" ${has ? '' : 'disabled'} aria-label="再生">${on ? PAUSE_ICON : PLAY_ICON}</button></div>`;
 }

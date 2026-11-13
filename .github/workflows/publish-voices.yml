@@ -1,0 +1,54 @@
+# 非公開の size-tracker-voices に入れたボイスを、その日になったら公開側（このリポジトリ）にコピーする
+name: 応援ボイスを公開
+
+on:
+  schedule:
+    - cron: '0 20 * * *'   # 毎朝5:00（日本時間）。GitHubの都合で数分〜少し遅れることがある
+  workflow_dispatch:       # Actions 画面の「Run workflow」で今すぐ実行もできる
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: riko010520-create/size-tracker-voices
+          token: ${{ secrets.VOICES_TOKEN }}
+          path: _private
+
+      - name: 今日までのボイスをコピー
+        id: copy
+        run: |
+          today=$(TZ=Asia/Tokyo date +%F)
+          mkdir -p voices
+          shopt -s nullglob nocaseglob
+          for f in _private/*.{m4a,mp3,wav,aac,mp4} _private/voices/*.{m4a,mp3,wav,aac,mp4}; do
+            name=$(basename "$f")
+            d=${name%%.*}
+            [[ $d =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || continue
+            [[ "$d" > "$today" ]] && continue
+            [ -e "voices/$name" ] || { cp "$f" "voices/$name"; echo "公開: $name"; }
+          done
+          rm -rf _private
+          git add voices
+          if git diff --cached --quiet; then
+            echo "新しく公開するボイスはありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish voices up to $today"
+          git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      - name: サイトを更新
+        if: steps.copy.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${{ github.repository }}/pages/builds" || true

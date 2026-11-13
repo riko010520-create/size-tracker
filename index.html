@@ -474,7 +474,7 @@ function renderWeek() {
     if (data.stamps[ds]) cls.push('done');
     if (ds === selected) cls.push('selected');
     if (ds > today) cls.push('future');
-    const mark = data.stamps[ds] ? stampOf(ds) : data.records[ds] ? '・' : '';
+    const mark = data.stamps[ds] ? '🔥' : data.records[ds] ? '・' : '';
     el.innerHTML = `<span class="dow">${DOW[d.getDay()]}</span><button class="${cls.join(' ')}">${d.getDate()}<span class="mark">${mark}</span></button>`;
     el.querySelector('button').onclick = () => { selected = ds; renderHome(); };
     wrap.appendChild(el);

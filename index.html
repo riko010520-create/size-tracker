@@ -819,7 +819,10 @@ document.getElementById('nextMonth').onclick = () => { calMonth.setMonth(calMont
 // ボイスは GitHub の voices フォルダに「2026-11-12.m4a」のように日付の名前で置く
 const VOICE_API = 'https://api.github.com/repos/riko010520-create/size-tracker/contents/voices';
 const VOICE_RE = /^(\d{4}-\d{2}-\d{2})\.(m4a|mp3|wav|aac|mp4)$/i;
+const TITLE_RE = /^(\d{4}-\d{2}-\d{2})\.txt$/i;
+const DEFAULT_VOICE_TITLE = 'aikoからの応援ボイス';
 let voices = {};
+let voiceTitles = {};  // 日付 → タイトル（voices に同じ日付の .txt があるとき）
 let voicesLoaded = false;
 let playing = null;
 const audio = document.getElementById('audio');
@@ -827,17 +830,29 @@ const PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v
 const PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>';
 
 async function loadVoices() {
+  const titleFiles = [];
   try {
     const r = await fetch(VOICE_API, { cache: 'no-store' });
     if (r.ok) {
       (await r.json()).forEach(f => {
         const m = f.name.match(VOICE_RE);
         if (m) voices[m[1]] = 'voices/' + encodeURIComponent(f.name);
+        const t = f.name.match(TITLE_RE);
+        if (t && t[1] <= today) titleFiles.push([t[1], 'voices/' + encodeURIComponent(f.name)]);
       });
     }
   } catch (e) {}
   voicesLoaded = true;
   renderHomeVoice(); renderVoiceList(); renderCal();
+  await Promise.all(titleFiles.map(async ([ds, url]) => {
+    try {
+      const r = await fetch(url, { cache: 'no-cache' });
+      if (!r.ok) return;
+      const line = (await r.text()).replace(/^\uFEFF/, '').split(/\r?\n/).map(x => x.trim()).find(Boolean);
+      if (line) voiceTitles[ds] = line.slice(0, 40);
+    } catch (e) {}
+  }));
+  if (titleFiles.length) refreshVoiceUI();
 }
 
 function fmtTime(t) { if (!isFinite(t)) return '0:00'; const s = Math.floor(t); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
@@ -865,7 +880,7 @@ function voiceCard(ds, extra) {
   const st = !has ? (!voicesLoaded ? '読み込み中…' : isVoiceDay(ds) ? 'まだ届いていません' : offDayText(ds)) : playing === ds ? `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}` : 'タップで再生';
   return `<div class="voice-card${extra || ''}" data-voice="${ds}">
     <div class="who">📣</div>
-    <div class="info"><div class="ttl">aikoからの応援ボイス</div><div class="st">${ds === today ? '今日' : jpDate(ds)}・${st}</div>
+    <div class="info"><div class="ttl">${escapeHtml(voiceTitles[ds] || DEFAULT_VOICE_TITLE)}</div><div class="st">${ds === today ? '今日' : jpDate(ds)}・${st}</div>
       <div class="bar"><i style="width:${playing === ds && audio.duration ? audio.currentTime / audio.duration * 100 : 0}%"></i></div></div>
     <button class="play" ${has ? '' : 'disabled'} aria-label="再生">${on ? PAUSE_ICON : PLAY_ICON}</button></div>`;
 }

@@ -829,6 +829,10 @@ const audio = document.getElementById('audio');
 const PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>';
 const PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg>';
 
+// ボイスは前の日の夜に公開側へ用意されるので、アプリではその日の朝5時から出す
+const VOICE_OPEN_HOUR = 5;
+function voiceOpen(ds) { return ds < today || (ds === today && new Date().getHours() >= VOICE_OPEN_HOUR); }
+
 async function loadVoices() {
   const titleFiles = [];
   try {
@@ -836,9 +840,9 @@ async function loadVoices() {
     if (r.ok) {
       (await r.json()).forEach(f => {
         const m = f.name.match(VOICE_RE);
-        if (m) voices[m[1]] = 'voices/' + encodeURIComponent(f.name);
+        if (m && voiceOpen(m[1])) voices[m[1]] = 'voices/' + encodeURIComponent(f.name);
         const t = f.name.match(TITLE_RE);
-        if (t && t[1] <= today) titleFiles.push([t[1], 'voices/' + encodeURIComponent(f.name)]);
+        if (t && voiceOpen(t[1])) titleFiles.push([t[1], 'voices/' + encodeURIComponent(f.name)]);
       });
     }
   } catch (e) {}
@@ -877,7 +881,7 @@ function offDayText(ds) {
 
 function voiceCard(ds, extra) {
   const has = !!voices[ds], on = playing === ds && !audio.paused;
-  const st = !has ? (!voicesLoaded ? '読み込み中…' : isVoiceDay(ds) ? 'まだ届いていません' : offDayText(ds)) : playing === ds ? `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}` : 'タップで再生';
+  const st = !has ? (!voicesLoaded ? '読み込み中…' : isVoiceDay(ds) ? (voiceOpen(ds) ? 'まだ届いていません' : '朝5時に届くよ🌅') : offDayText(ds)) : playing === ds ? `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}` : 'タップで再生';
   return `<div class="voice-card${extra || ''}" data-voice="${ds}">
     <div class="who">📣</div>
     <div class="info"><div class="ttl">${escapeHtml(voiceTitles[ds] || DEFAULT_VOICE_TITLE)}</div><div class="st">${ds === today ? '今日' : jpDate(ds)}・${st}</div>
@@ -913,6 +917,13 @@ audio.addEventListener('error', () => { if (playing) { toast('ボイスを読み
 function renderAll() { renderHome(); renderCal(); renderGraph(); renderVoiceList(); }
 renderAll();
 loadVoices();
+
+// 開きっぱなしのまま日付が変わったり朝5時を過ぎたりしたら、アプリに戻ってきたときに読み直す
+const openKey = () => `${ymd(new Date())}-${new Date().getHours() >= VOICE_OPEN_HOUR}`;
+const loadedKey = openKey();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && openKey() !== loadedKey) location.reload();
+});
 </script>
 </body>
 </html>
